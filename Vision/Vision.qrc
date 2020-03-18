@@ -1,0 +1,21 @@
+<RCC>
+    <qresource prefix="/Vision">
+        <file>Resources/icon/About.png</file>
+        <file>Resources/icon/Close.png</file>
+        <file>Resources/icon/Copy.png</file>
+        <file>Resources/icon/Cut.png</file>
+        <file>Resources/icon/New.png</file>
+        <file>Resources/icon/Open.png</file>
+        <file>Resources/icon/Paste.png</file>
+        <file>Resources/icon/Quit.png</file>
+        <file>Resources/icon/Redo.png</file>
+        <file>Resources/icon/Save.png</file>
+        <file>Resources/icon/SaveAll.png</file>
+        <file>Resources/icon/SelectAll.png</file>
+        <file>Resources/icon/Undo.png</file>
+        <file>Resources/icon/SaveAs.png</file>
+        <file>Resources/icon/Attritube.png</file>
+        <file>Resources/icon/getCode.png</file>
+        <file>Resources/icon/Delete.png</file>
+    </qresource>
+</RCC>
