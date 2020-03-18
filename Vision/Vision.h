@@ -20,7 +20,7 @@ public slots:
 	void showCurDateTime();
 private:
 	Ui::VisionClass visionUi;
-	QSplitter* horizonSplitter;//左右竖直分割器
+	QSplitter* VSplitter;//左右竖直分割器
 	QTextEdit* a, * b, * c;//test
 
 private slots://槽函数声明

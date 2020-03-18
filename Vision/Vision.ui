@@ -151,6 +151,12 @@
    <addaction name="actionAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusBar">
+   <property name="font">
+    <font>
+     <family>微软雅黑</family>
+     <pointsize>12</pointsize>
+    </font>
+   </property>
    <property name="sizeGripEnabled">
     <bool>true</bool>
    </property>
