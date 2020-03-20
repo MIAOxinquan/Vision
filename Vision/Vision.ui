@@ -104,7 +104,7 @@
     <addaction name="separator"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
-    <addaction name="actiongetCode"/>
+    <addaction name="actionGetCode"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="font">
@@ -144,7 +144,7 @@
    <addaction name="separator"/>
    <addaction name="actionDelete"/>
    <addaction name="separator"/>
-   <addaction name="actiongetCode"/>
+   <addaction name="actionGetCode"/>
    <addaction name="separator"/>
    <addaction name="actionClose"/>
    <addaction name="separator"/>
@@ -395,7 +395,7 @@
     <string>Ctrl+A</string>
    </property>
   </action>
-  <action name="actiongetCode">
+  <action name="actionGetCode">
    <property name="icon">
     <iconset theme="getCode" resource="Vision.qrc">
      <normaloff>:/Vision/Resources/icon/getCode.png</normaloff>:/Vision/Resources/icon/getCode.png</iconset>
