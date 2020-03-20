@@ -67,12 +67,21 @@ void Vision::showCurDateTime() {
 int Vision::Quit() {
 	int choose = -1;
 	if (true) {
-		choose = QMessageBox::question(this
+		QMessageBox* msgBox = new QMessageBox(
+			QMessageBox::Question
 			, QString::fromLocal8Bit("退出")
 			, QString::fromLocal8Bit("是否保存所有文件？")
 			, QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+		msgBox->button(QMessageBox::Yes)->setText(QString::fromLocal8Bit("保存退出"));
+		msgBox->button(QMessageBox::No)->setText(QString::fromLocal8Bit("直接退出"));
+		msgBox->button(QMessageBox::Cancel)->setText(QString::fromLocal8Bit("取消"));
+		choose = msgBox->exec();
+
 		if (QMessageBox::Yes == choose)  SaveAll();
-		if (choose != QMessageBox::Cancel) qApp->quit();
+		if (choose != QMessageBox::Cancel) {
+			delete msgBox;
+			qApp->quit();
+		}
 	}
 	else {
 		qApp->quit();
