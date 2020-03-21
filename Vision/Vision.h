@@ -1,7 +1,6 @@
-#pragma once
-
 #include <QtWidgets/QMainWindow>
 #include "ui_Vision.h"
+#include "SmartEdit.h"
 namespace Ui {
 	class Vision;
 }
@@ -17,10 +16,6 @@ public:
 	QLabel* curDateTimeLabel;
 	QTimer* timer;
 
-public slots:
-	void About();
-	void showCurDateTime();
-
 protected:
 	void closeEvent(QCloseEvent* event)override;
 
@@ -29,6 +24,10 @@ private:
 	QSplitter* globalSplitter;//左右竖直分割器
 	QTextEdit* a;//test
 	QTabWidget* plotTab, * codeTab;
+
+public slots:
+	void About();
+	void showCurDateTime();
 
 private slots:
 	//大写是为避免和qt自带函数重名

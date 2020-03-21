@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Vision.h"
-
+//version 0.21
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
@@ -15,14 +15,16 @@ Vision::Vision(QWidget* parent)
 	visionUi.statusBar->addPermanentWidget(curDateTimeLabel);
 
 	a->setMinimumWidth(200);
-	plotTab->setMinimumWidth(200);
-	codeTab->setMinimumWidth(200);
+	plotTab->setMinimumWidth(300);
+	codeTab->setMinimumWidth(300);
 	//(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
 	//例如以下1号元素与2号元素宽度比为2：1
 	globalSplitter->setStretchFactor(0, 0);
 	globalSplitter->setStretchFactor(1, 2);
 	globalSplitter->setStretchFactor(2, 1);
 
+	SmartEdit* edit = new SmartEdit();
+	codeTab->addTab(edit,"aaa");
 
 	this->setCentralWidget(globalSplitter);
 	this->setMinimumSize(900, 540);
@@ -153,23 +155,6 @@ void Vision::SaveAs() {
 void Vision::Close() {
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

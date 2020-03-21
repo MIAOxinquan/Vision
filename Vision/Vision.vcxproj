@@ -93,6 +93,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SmartEdit.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -100,6 +101,7 @@
     <ClCompile Include="Vision.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="SmartEdit.h" />
     <ClInclude Include="stdafx.h" />
     <QtMoc Include="Vision.h" />
   </ItemGroup>
