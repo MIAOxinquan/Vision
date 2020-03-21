@@ -6,13 +6,15 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, rowNumArea(new RowNumArea(this))
 	, keyWordsCompleter(new QCompleter(this))
 {
+	setFont(QFont("微软雅黑", 12, QFont::Bold));
+	rowNumArea->setFont(QFont("微软雅黑",12,QFont::Bold));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
-	//curEntityCodeLit();
+	rowNumWidthPlot(0);//初始化刷新行号块宽
 	curRowLit();
-	rowNumWidthPlot(0);
 
 	connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(rowNumWidthPlot(int)));
 	connect(this, SIGNAL(updateRequest(QRect, int)), this, SLOT(rowNumsPlot(QRect, int)));
+	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(curRowLit()));
 
 }
 
@@ -91,11 +93,11 @@ void SmartEdit::rowNumPlot(QPaintEvent* event) {
 		, top = (int)blockBoundingGeometry(block).translated(contentOffset()).top()
 		//直接赋值为0则行号和文本高度不对齐,块高设置为字体高也会导致行号与字体高度不对齐
 		, bottom = top + (int)blockBoundingRect(block).height()
-		, numHeight = fontMetrics().height();
+		, height = fontMetrics().height();
 	while (block.isValid() && top <= event->rect().bottom()) {
 		if (block.isVisible() && bottom >= event->rect().top()) {
 			QString num = QString::number(blockNumber + 1);
-			painter.drawText(0, top, rowNumArea->width(), numHeight, Qt::AlignRight, num);
+			painter.drawText(0, top, rowNumArea->width(), height, Qt::AlignRight, num);
 			this->update();
 		}
 		block = block.next();
@@ -109,7 +111,7 @@ void SmartEdit::curRowLit() {
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
 		QTextEdit::ExtraSelection selection;
-		selection.format.setBackground(QColor(Qt::yellow).lighter(160));//设置当前行背景色
+		selection.format.setBackground(QColor(Qt::yellow).lighter(155));//设置当前行背景色
 		selection.format.setProperty(QTextFormat::FullWidthSelection, true);
 		selection.cursor = textCursor();
 		selection.cursor.clearSelection();
