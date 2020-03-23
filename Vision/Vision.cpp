@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Vision.h"
-//version 0.21
+//version 0.23
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
@@ -27,7 +27,7 @@ Vision::Vision(QWidget* parent)
 	codeTab->addTab(edit,"aaa");
 
 	this->setCentralWidget(globalSplitter);
-	this->setMinimumSize(900, 540);
+	this->setMinimumSize(900, 450);
 	timer->start(1000);
 	
 	//²Ûº¯Êý¼¯Èº
