@@ -1,0 +1,218 @@
+/*窗体*/
+QMainWindow {
+    background: #D7E9F5;
+}
+
+/*菜单栏*/
+QMenuBar {
+    background:#9EC1E0;
+    color: darkslategray;
+    border: 1px solid #D7E9F5;
+    spacing: 1px; /* spacing between menu bar items */
+}
+QMenuBar::item {
+    padding: 2px 30px;
+    background: transparent;
+    border-radius: 15px;
+}
+QMenuBar::item:selected { /* when selected using mouse or keyboard */
+    background: #D7E9F5;
+    color: black;
+    border: 1px solid #0A86AF;
+}
+
+/*菜单*/
+QMenu {
+    background: #9EC1E0;
+    color: darkslategray;
+    border:1px solid #0A86AF;
+}
+QMenu::item {
+    padding: 0px 25px 0px 25px;/*上右下左*/
+    height: 40px;
+    border-radius: 20px;
+}
+QMenu::item:selected {
+    padding: 0px 15px 0px 15px;
+    background: #D7E9F5;
+    color: black;
+    border: 1px solid #0A86AF; /* reserve space for selection border */
+}
+QMenu::icon { /* appearance of a 'checked' icon */
+    background: none;
+    position: absolute;
+    left: 10px;
+}
+QMenu::separator {
+    height: 2px;
+    background: #D7E9F5;
+    margin-left: 35px;
+    margin-right: 10px;
+}
+QMenu::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+/*工具栏*/
+QToolBar {
+    background: #9EC1E0;
+    border: 1px solid #D7E9F5;
+    spacing: 1px; /* spacing between items in the tool bar */
+}
+QToolBar::handle:horizontal
+,QToolBar::handle:vertical {
+    background: #0A86AF;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    border-bottom-right-radius: 12px;
+}
+QToolBar::handle:horizontal { 
+    margin-top: 5px;
+    border-top-right-radius: 12px;
+    width: 12px;
+}
+QToolBar::handle:vertical { 
+    margin-left: 5px;
+    border-bottom-left-radius: 12px;  
+    height: 12px;
+}
+QToolBar::handle:horizontal:hover
+,QToolBar::handle:vertical:hover
+,QToolBar::handle:horizontal:pressed
+,QToolBar::handle:vertical:pressed{
+    border: 2px solid darkslategray; 
+}
+QToolBar::handle:horizontal:hover
+,QToolBar::handle:horizontal:pressed{
+    border-left: none;
+}
+QToolBar::handle:vertical:hover
+,QToolBar::handle:vertical:pressed{
+    border-top:none; 
+}
+QToolBar::separator:horizontal
+,QToolBar::separator:vertical {
+    background: #D7E9F5;
+}
+QToolBar::separator:horizontal{margin-top: 3px; margin-bottom: 3px; width: 1px;}
+QToolBar::separator:vertical {margin-left: 3px; margin-right: 3px; height: 1px;}
+/*
+QTabBar QToolButton::right-arrow 
+,QTabBar QToolButton::left-arrow { the arrow mark in the tool buttons 
+    width: 15px;
+    height: 15px;
+    background: none;
+}
+*/
+
+/*工具栏按钮*/
+QToolButton{ /* all types of tool button */
+    margin: 1px;
+    width: 45px;
+    border-radius: 15px; 
+    background: transparent;
+}
+QToolButton:pressed {
+    padding: 3px;
+    background: #D7E9F5;
+    border: 1px solid #0A86AF;
+}
+
+/*分割器*/
+QSplitter::handle {
+    background: #9EC1E0;
+}
+QSplitter::handle:pressed {
+    background: #F9F8E5;
+}
+QSplitter::handle:horizontal {width: 4px;}
+QSplitter::handle:vertical {height: 4px;}
+
+/*切换器*/
+QTabWidget::pane { /* The tab widget frame */
+    border-top: #9EC1E0;
+}
+QTabWidget::tab-bar {
+    left: 0px; /* move to the right by 5px */
+}
+/* Style the tab using the tab sub-control. Note that
+    it reads QTabBar _not_ QTabWidget */
+QTabBar::tab {
+    background: #9EC1E0;
+    color: darkslategray;
+    border: 2px solid #0A86AF;
+    border-bottom-color: #9EC1E0; /* same as the pane color */
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    min-width: 25ex;
+    padding: 3px;
+}
+QTabBar::tab:selected
+,QTabBar::tab:hover {
+    background: rgb(255,255,236);
+    color: black;
+}
+QTabBar::tab:selected {
+    border-color: #0A86AF;
+    border-bottom-color: #D7E9F5; /* same as pane color */
+}
+QTabBar::tab:!selected {
+    margin-top: 6px; /* make non-selected tabs look smaller */
+}
+/* make use of negative margins for overlapping tabs */
+QTabBar::tab:selected {
+    /* expand/overlap to the left and right by 6px */
+    margin-left: -6px;
+    margin-right: -6px;
+}
+QTabBar::tab:first:selected {
+    margin-left: 0; /* the first selected tab has nothing to overlap with on the left */
+}
+QTabBar::tab:last:selected {
+    margin-right: 0; /* the last selected tab has nothing to overlap with on the right */
+}
+QTabBar::tab:only-one {
+    margin: 0; /* if there is only one tab, we don't want overlapping margins */
+}
+
+/*状态栏*/
+QStatusBar {
+    color: darkslategray;
+    background: #9EC1E0;
+}
+/*
+QStatusBar::item {
+    background: #D7E9F5;
+    border: 1px solid #0A86AF;
+    border-radius: 5px;
+}*/
+QStatusBar QLabel {
+    padding-left: 2px;
+    padding-right: 2px;
+    background: #D7E9F5;
+    color: darkslategray;
+    border: 1px solid #0A86AF;
+    border-radius: 6px;
+}
+
+/*信息框*/
+/*qss有缓冲区刷新bug，二次加载无法刷新缓存
+QMessageBox是新生成的界面属于二次加载
+因此应当另写qss或重新加载或直接写入程序
+*/
+/*
+QMessageBox {
+background: #9EC1E0;
+color:darkslategray;
+}
+QMessageBox QPushButton{
+width: 120px;height: 30px;
+background: #D7E9F5;
+border: 2px solid #5C6388;
+border-radius: 6px;	
+}
+QMessageBox QPushButton:hover{
+color:black;
+}
+*/

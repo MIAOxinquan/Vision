@@ -6,8 +6,8 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, rowNumArea(new RowNumArea(this))
 	, keyWordsCompleter(new QCompleter(this))
 {
-	rowNumArea->setFont(QFont("Arial", 12, QFont::Bold));
-	setFont(QFont("Arial", 12));
+	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
+	setFont(QFont("微软雅黑", 12));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
 	rowContentPlot();//初始化刷新行号块
 
@@ -55,13 +55,25 @@ void SmartEdit::keyReleaseEvent(QKeyEvent* event) {
 	switch (event->key())
 	{
 	case Qt::Key_ParenLeft:
-		this->textCursor().insertText(")");
-		textCursor().movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, 1);
-		textCursor().clearSelection(); break;
+		textCursor().insertText(")");
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
 	case  Qt::Key_BracketLeft:
-		this->textCursor().insertText("]"); break;
+		textCursor().insertText("]");
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
 	case  Qt::Key_BraceLeft:
-		this->textCursor().insertText("}"); break;
+		textCursor().insertText("\n\n}");
+		moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+		break;
+	case Qt::Key_Apostrophe:
+		textCursor().insertText("\'");
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
+	case Qt::Key_QuoteDbl:
+		textCursor().insertText("\"");
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
 	default: break;
 	}
 }
@@ -100,12 +112,11 @@ void SmartEdit::rowNumPlot(QPaintEvent* event) {
 }
 /*设置文本框左距以适配行号*/
 void SmartEdit::rowContentPlot(/*int*/) {
-	qDebug() <<blockCount()<<":"<< verticalScrollBar()->sliderPosition();
-	setViewportMargins(rowNumWidth() - 3, 0, -3, 0);
+	setViewportMargins(rowNumWidth() - 3, -1, -3, 0);
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
 		QTextEdit::ExtraSelection selection;
-		selection.format.setBackground(QColor(Qt::cyan).lighter(180));//设置当前行背景色
+		selection.format.setBackground(QColor(Qt::cyan).lighter(192));//设置当前行背景色
 		selection.format.setProperty(QTextFormat::FullWidthSelection, true);
 		selection.cursor = textCursor();
 		selection.cursor.clearSelection();

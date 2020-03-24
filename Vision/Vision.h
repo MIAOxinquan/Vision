@@ -1,6 +1,8 @@
 #include <QtWidgets/QMainWindow>
 #include "ui_Vision.h"
+#include "ToolKit.h"
 #include "SmartEdit.h"
+#include "PlotPad.h"
 namespace Ui {
 	class Vision;
 }
@@ -22,8 +24,8 @@ protected:
 private:
 	Ui::VisionClass visionUi;
 	QSplitter* globalSplitter;//×óÓÒÊúÖ±·Ö¸îÆ÷
-	QTextEdit* a;//test
-	QTabWidget* plotTab, * codeTab;
+	ToolKit* toolKit;
+	QTabWidget* plotTab, * editTab;
 
 public slots:
 	void About();

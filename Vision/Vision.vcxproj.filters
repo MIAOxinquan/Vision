@@ -37,6 +37,12 @@
     <ClCompile Include="SmartEdit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ToolKit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PlotPad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -48,6 +54,12 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="SmartEdit.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ToolKit.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="PlotPad.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

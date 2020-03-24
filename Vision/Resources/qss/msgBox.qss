@@ -1,0 +1,25 @@
+QMessageBox {
+    font-size:18px;
+    background: #9EC1E0;
+}
+QMessageBox::title{
+    font-size:18px;
+    font:bold;
+}
+QMessageBox QPushButton{
+    margin:3px;
+    width: 120px;height: 30px;
+    background: #D7E9F5;
+    color: darkslategray;
+    font-size:16px;
+    font:bold;
+    border: 2px solid #5C6388;
+    border-radius: 15px;	
+}
+QMessageBox QPushButton:hover{
+    margin:0;
+    background:#F9F8E5;
+    border-width: 3px;
+    border-radius:18px;
+    color:black;
+}

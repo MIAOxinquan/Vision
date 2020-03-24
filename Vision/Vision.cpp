@@ -1,36 +1,50 @@
 #include "stdafx.h"
 #include "Vision.h"
-//version 0.23
+//last version 0.24
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
 	, curDateTimeLabel(new QLabel())
 	, globalSplitter(new QSplitter(Qt::Horizontal, this))
-	, a(new QTextEdit("a", globalSplitter))
+	, toolKit(new ToolKit(globalSplitter))
 	, plotTab(new QTabWidget(globalSplitter))
-	, codeTab(new QTabWidget(globalSplitter))
+	, editTab(new QTabWidget(globalSplitter))
 {
 	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
 	curDateTimeLabel->setAlignment(Qt::AlignRight);
-	visionUi.statusBar->addPermanentWidget(curDateTimeLabel);
-
-	a->setMinimumWidth(200);
-	plotTab->setMinimumWidth(300);
-	codeTab->setMinimumWidth(300);
+	statusBar()->addPermanentWidget(curDateTimeLabel);
 	//(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
-	//例如以下1号元素与2号元素宽度比为2：1
-	globalSplitter->setStretchFactor(0, 0);
-	globalSplitter->setStretchFactor(1, 2);
-	globalSplitter->setStretchFactor(2, 1);
-
-	SmartEdit* edit = new SmartEdit();
-	codeTab->addTab(edit,"aaa");
+	//例如以下1号元素与2号元素宽度比为3：1
+	int ratio[] = { 1,1,1 };
+	for (int i = 0; i < 3; i++) {
+		globalSplitter->setStretchFactor(i, ratio[i]);
+	}
+	toolKit->setMinimumWidth(60);
+	toolKit->setMaximumWidth(120);
+	plotTab->setMinimumWidth(180);
+	editTab->setMinimumWidth(180);
+	/*plot&edit test*/
+	for (int i = 0; i < 5; i++) {
+		PlotPad* pad = new PlotPad();
+		SmartEdit* edit = new SmartEdit();
+		plotTab->addTab(pad, QString::number(i));
+		editTab->addTab(edit, QString::number(i));
+	}
 
 	this->setCentralWidget(globalSplitter);
-	this->setMinimumSize(900, 450);
+	this->setMinimumSize(900, 600);
+	showCurDateTime();
+	statusBar()->showMessage("initailizition finished!", 5000);
+
+	//加载qss
+	QFile file("./Resources/qss/global.qss");
+	file.open(QFile::ReadOnly);
+	setStyleSheet(file.readAll());
+	file.close();
+	//启动计时器
 	timer->start(1000);
-	
-	//槽函数集群
+
+	//槽函数
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
 	connect(visionUi.actionUndo, SIGNAL(triggered()), this, SLOT(Undo()));
 	connect(visionUi.actionRedo, SIGNAL(triggered()), this, SLOT(Redo()));
@@ -55,14 +69,14 @@ Vision::~Vision() {
 	timer->stop();
 	delete timer;
 	delete curDateTimeLabel;
-	delete a;
+	delete toolKit;
 	delete plotTab;
-	delete codeTab;
+	delete editTab;
 	delete globalSplitter;
 }
 
 void Vision::showCurDateTime() {
-	QString curDateTime = QDate::currentDate().toString() + " / " + QTime::currentTime().toString();
+	QString curDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd / hh:mm:ss");
 	curDateTimeLabel->setText(curDateTime);
 }
 /*退出程序*/
@@ -77,6 +91,10 @@ int Vision::Quit() {
 		msgBox->button(QMessageBox::Yes)->setText(QString::fromLocal8Bit("保存退出"));
 		msgBox->button(QMessageBox::No)->setText(QString::fromLocal8Bit("直接退出"));
 		msgBox->button(QMessageBox::Cancel)->setText(QString::fromLocal8Bit("取消"));
+		QFile file("./Resources/qss/msgBox.qss");
+		file.open(QFile::ReadOnly);
+		msgBox->setStyleSheet(file.readAll());
+		file.close();
 		choose = msgBox->exec();
 
 		if (QMessageBox::Yes == choose)  SaveAll();
@@ -96,8 +114,17 @@ void Vision::closeEvent(QCloseEvent* event) {
 }
 /*关于*/
 void Vision::About() {
-	QMessageBox::information(this, QString::fromLocal8Bit("说明"), 
-		QString::fromLocal8Bit("Vision为您服务！\n使用：\n开发团队：\n"));
+	QMessageBox* msgBox = new QMessageBox(
+		QMessageBox::Information
+		, QString::fromLocal8Bit("说明")
+		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\n@Document: 杨天舒")
+		, QMessageBox::Ok);
+	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭"));
+	QFile file("./Resources/qss/msgBox.qss");
+	file.open(QFile::ReadOnly);
+	msgBox->setStyleSheet(file.readAll());
+	file.close();
+	msgBox->exec();
 }
 /*撤回*/
 void Vision::Undo() {
