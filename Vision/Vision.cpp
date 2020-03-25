@@ -23,19 +23,18 @@ Vision::Vision(QWidget* parent)
 	plotTab->setMinimumWidth(180);
 	editTab->setMinimumWidth(180);
 
-	/*plot&edit test*/
-	for (int i = 0; i < 5; i++) {
-		PlotPad* pad = new PlotPad();
-		SmartEdit* edit = new SmartEdit();
-		plotTab->addTab(pad, QString::number(i));
-		editTab->addTab(edit, QString::number(i));
-	}
-
 	this->setCentralWidget(globalSplitter);
 	this->setMinimumSize(900, 600);
 	showCurDateTime();
 	statusBar()->showMessage("initailizition finished!", 5000);
 
+	/*plot&edit test*/
+	for (int i = 0; i < 10; i++) {
+		PlotPad* pad = new PlotPad();
+		SmartEdit* edit = new SmartEdit();
+		plotTab->addTab(pad, QString::number(i));
+		editTab->addTab(edit, QString::number(i));
+	}
 	//º”‘ÿqss
 	QFile file("./Resources/qss/global.qss");
 	file.open(QFile::ReadOnly);

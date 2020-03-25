@@ -175,6 +175,37 @@ QTabBar::tab:last:selected {
 QTabBar::tab:only-one {
     margin: 0; /* if there is only one tab, we don't want overlapping margins */
 }
+QTabBar::tear {
+    margin-bottom: 20px;
+    width: 10px;
+    background: #0A86AF;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+/* the width of the scroll buttons */
+QTabBar::scroller { 
+    width: 80px;
+}
+QTabBar QToolButton { /* the scroll buttons are tool buttons */
+    margin-bottom: 20px;
+    width: 24px;
+    background:#9EC1E0;
+    border: 2px solid #0A86AF;
+    border-radius: 10px;
+}
+QTabBar QToolButton::pressed{
+    border-width: 3px;
+    background: rgb(255,255,236);
+}
+/* the arrow mark in the tool buttons *//*
+QTabBar QToolButton::left-arrow {
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+}
+QTabBar QToolButton::right-arrow { 
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}*/
 
 /*状态栏*/
 QStatusBar {
@@ -200,19 +231,4 @@ QStatusBar QLabel {
 /*qss有缓冲区刷新bug，二次加载无法刷新缓存
 QMessageBox是新生成的界面属于二次加载
 因此应当另写qss或重新加载或直接写入程序
-*/
-/*
-QMessageBox {
-background: #9EC1E0;
-color:darkslategray;
-}
-QMessageBox QPushButton{
-width: 120px;height: 30px;
-background: #D7E9F5;
-border: 2px solid #5C6388;
-border-radius: 6px;	
-}
-QMessageBox QPushButton:hover{
-color:black;
-}
 */

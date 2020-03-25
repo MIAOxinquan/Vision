@@ -1,7 +1,8 @@
 .QWidget{
     background: lightblue;
     color: darkslategray;
-    border-radius: 6px;
+    border-top-right-radius: 9px;
+    border-bottom-right-radius: 9px;
 }
 /*文本框设置*/
 QPlainTextEdit
