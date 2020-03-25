@@ -1,4 +1,5 @@
 #include <QtWidgets>
+#include <QByteArray>
 
 class SmartEdit: public QPlainTextEdit
 {
@@ -7,6 +8,7 @@ public:
 	SmartEdit(QTabWidget* parent = Q_NULLPTR);
 	~SmartEdit();
 	void init();
+	QString getCompletionPrefix() const;
 	int rowNumWidth();//行号块宽
 	void rowNumPlot(QPaintEvent* event);//行号区绘画
 
@@ -16,10 +18,14 @@ protected:
 	void keyReleaseEvent(QKeyEvent* event);
 
 private:
+	QString completionPrefix;
+	QStringList keyWords = { "int","float","double","string","char","if","else","switch","for","while" };
 	QWidget* rowNumArea;
 	QCompleter* keyWordsCompleter;
 
 private slots:
+	void completeKeyWord(const QString& completion);//补全关键字
+	void updatePrefix(void);//更新前缀
 	void rowContentPlot();//单行文本块绘画
 };
 

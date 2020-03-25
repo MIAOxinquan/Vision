@@ -3,12 +3,15 @@
 SmartEdit::SmartEdit(QTabWidget* parent)
 	:QPlainTextEdit(parent)
 	, rowNumArea(new RowNumArea(this))
-	, keyWordsCompleter(new QCompleter(this))
+	, keyWordsCompleter(NULL)
 {
+	keyWordsCompleter = new QCompleter(keyWords);
 	init();//初始化
 	rowContentPlot();//初始化刷新行号块
 	//槽函数
+	connect(keyWordsCompleter, SIGNAL(activated(QString)), this, SLOT(completeKeyWord(QString)));
 	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(rowContentPlot()));
+	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updatePrefix()));
 
 }
 
@@ -16,10 +19,16 @@ SmartEdit::~SmartEdit() {
 	delete rowNumArea;	rowNumArea = NULL;
 	delete keyWordsCompleter;	keyWordsCompleter = NULL;
 }
+/*初始化*/
 void SmartEdit::init() {
 	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
 	setFont(QFont("微软雅黑", 12));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
+	keyWordsCompleter->setWidget(this);
+	keyWordsCompleter->setCaseSensitivity(Qt::CaseSensitive); 
+	keyWordsCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
+	keyWordsCompleter->popup()->setFont(QFont("微软雅黑", 12));
+	keyWordsCompleter->setMaxVisibleItems(5);
 	//加载qss
 	QFile file("./Resources/qss/smart.qss");
 	file.open(QFile::ReadOnly);
@@ -28,14 +37,13 @@ void SmartEdit::init() {
 }
 /*重写：刷新大小*/
 void SmartEdit::resizeEvent(QResizeEvent* event){
-	QPlainTextEdit::resizeEvent(event);
 	QRect rct = contentsRect();
 	rowNumArea->setGeometry(QRect(rct.left(), rct.top(), rowNumWidth(), rct.height()));
 }
 /*按键事件*/
 void SmartEdit::keyPressEvent(QKeyEvent* event) {
 	QPlainTextEdit::keyPressEvent(event);
-	if (keyWordsCompleter ) {
+	if (keyWordsCompleter) {
 		if (keyWordsCompleter->popup()->isVisible()) {
 			switch (event->key()) {
 			case Qt::Key_Enter:
@@ -47,8 +55,17 @@ void SmartEdit::keyPressEvent(QKeyEvent* event) {
 			}
 		} 
 	}
-
+	completionPrefix = getCompletionPrefix();
+	keyWordsCompleter->setCompletionPrefix(completionPrefix);
+	if (completionPrefix == "") { return; }
+	if (keyWordsCompleter->completionCount() > 0) {
+		QRect cursorRct = cursorRect();
+		keyWordsCompleter->complete(QRect(cursorRct.left() + rowNumWidth(), cursorRct.top() + fontMetrics().height(), 150, 1));
+	} else {
+		keyWordsCompleter->popup()->setVisible(false);
+	}
 }
+
 /*释键事件*/
 void SmartEdit::keyReleaseEvent(QKeyEvent* event) {
 	QPlainTextEdit::keyReleaseEvent(event);
@@ -110,9 +127,11 @@ void SmartEdit::rowNumPlot(QPaintEvent* event) {
 		blockNumber++;
 	}
 }
-/*设置文本框左距以适配行号*/
+/*文本区绘图*/
 void SmartEdit::rowContentPlot(/*int*/) {
+	//设置文本宽度，使之与行号区适配
 	setViewportMargins(rowNumWidth() - 3, -1, -3, 0);
+	//当前行高亮
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
 		QTextEdit::ExtraSelection selection;
@@ -123,4 +142,43 @@ void SmartEdit::rowContentPlot(/*int*/) {
 		extraSelections.append(selection);
 		setExtraSelections(extraSelections);
 	}
+}
+/*获取前缀：光标处至上一个空格之间的字符串*/
+QString SmartEdit::getCompletionPrefix() const {
+	QString selectedText;
+	//不断向左移动cursor，并选中字符，并查看选中的单词中是否含有空格——空格作为单词的分隔符
+	while (textCursor().movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, 1)) {
+		selectedText = textCursor().selectedText();
+		if (selectedText.startsWith(QString(" "))
+			|| selectedText.startsWith(QChar(0x422029))) {
+			break;
+		}
+	}
+	if (selectedText.startsWith(QChar(0x422029))) {
+		selectedText.replace(0, 1, QChar(' '));
+	}
+	return selectedText.trimmed();
+}
+/*前缀更新*/
+void SmartEdit::updatePrefix() {
+	QString curPrefix = getCompletionPrefix();
+	if (curPrefix == "") {
+		keyWordsCompleter->setCompletionPrefix("----");
+		QRect cursorRct = cursorRect();
+		keyWordsCompleter->complete(QRect(cursorRct.left(), cursorRct.top(), 0, 0));
+	}
+}
+/*补全关键字*/
+void SmartEdit::completeKeyWord(const QString& completion) {
+	QString curPrefix = getCompletionPrefix(),
+		shouldInsertText = completion;
+	if (!completion.contains(curPrefix)) {  // 删除之前未打全的字符
+		textCursor().movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, curPrefix.size());
+		textCursor().clearSelection();
+	}
+	else {  // 补全相应的字符
+		shouldInsertText = shouldInsertText.replace(
+			shouldInsertText.indexOf(curPrefix), curPrefix.size(), "");
+	}
+	textCursor().insertText(shouldInsertText);
 }
