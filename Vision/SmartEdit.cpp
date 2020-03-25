@@ -5,29 +5,27 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, rowNumArea(new RowNumArea(this))
 	, keyWordsCompleter(new QCompleter(this))
 {
-	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
-	setFont(QFont("微软雅黑", 12));
-	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
+	init();//初始化
 	rowContentPlot();//初始化刷新行号块
-
-	//加载qss
-	QFile file("./Resources/qss/smart.qss");
-	file.open(QFile::ReadOnly);
-	setStyleSheet(file.readAll());
-	file.close();
-
 	//槽函数
 	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(rowContentPlot()));
 
 }
 
 SmartEdit::~SmartEdit() {
-	delete rowNumArea;
-	rowNumArea = NULL;
-	delete keyWordsCompleter;
-	keyWordsCompleter = NULL;
+	delete rowNumArea;	rowNumArea = NULL;
+	delete keyWordsCompleter;	keyWordsCompleter = NULL;
 }
-
+void SmartEdit::init() {
+	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
+	setFont(QFont("微软雅黑", 12));
+	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
+	//加载qss
+	QFile file("./Resources/qss/smart.qss");
+	file.open(QFile::ReadOnly);
+	setStyleSheet(file.readAll());
+	file.close();
+}
 /*重写：刷新大小*/
 void SmartEdit::resizeEvent(QResizeEvent* event){
 	QPlainTextEdit::resizeEvent(event);

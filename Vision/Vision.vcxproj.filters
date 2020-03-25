@@ -40,6 +40,9 @@
     <ClCompile Include="PlotPad.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Vision.h">
@@ -67,5 +70,10 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Vision.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

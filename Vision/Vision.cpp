@@ -1,5 +1,15 @@
 #include "Vision.h"
-//current version 1.01
+#include "ToolKit.h"
+#include "PlotPad.h"
+#include "SmartEdit.h"
+/*
+neighbour version means one of last few versions or current version
+,for example versions 1.0, 1.01, 1.02 are regarded as neighbours
+,if current version is 1.02
+,so as neighbour version can be 1.0, 1.01 or 1.02 
+*/
+//neighbour version : 1.03
+
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
@@ -9,40 +19,10 @@ Vision::Vision(QWidget* parent)
 	, plotTab(new QTabWidget(globalSplitter))
 	, editTab(new QTabWidget(globalSplitter))
 {
-	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
-	curDateTimeLabel->setAlignment(Qt::AlignRight);
-	statusBar()->addPermanentWidget(curDateTimeLabel);
-	//(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
-	//例如以下1号元素与2号元素宽度比为3：1
-	int ratio[] = { 1,1,1 };
-	for (int i = 0; i < 3; i++) {
-		globalSplitter->setStretchFactor(i, ratio[i]);
-	}
-	toolKit->setMinimumWidth(60);
-	toolKit->setMaximumWidth(120);
-	plotTab->setMinimumWidth(180);
-	editTab->setMinimumWidth(180);
-
-	this->setCentralWidget(globalSplitter);
-	this->setMinimumSize(900, 600);
-	showCurDateTime();
-	statusBar()->showMessage("initailizition finished!", 5000);
-
-	/*plot&edit test*/
-	for (int i = 0; i < 10; i++) {
-		PlotPad* pad = new PlotPad();
-		SmartEdit* edit = new SmartEdit();
-		plotTab->addTab(pad, QString::number(i));
-		editTab->addTab(edit, QString::number(i));
-	}
-	//加载qss
-	QFile file("./Resources/qss/global.qss");
-	file.open(QFile::ReadOnly);
-	setStyleSheet(file.readAll());
-	file.close();
+	//初始化
+	init();
 	//启动计时器
 	timer->start(1000);
-
 	//槽函数
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
 	connect(visionUi.actionUndo, SIGNAL(triggered()), this, SLOT(Undo()));
@@ -63,24 +43,52 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(About()));
 
 }
-
 Vision::~Vision() {
-	timer->stop();
-	delete timer;
-	timer = NULL;
-	delete curDateTimeLabel;
-	curDateTimeLabel = NULL;
-	delete toolKit;
-	toolKit = NULL;
+	timer->stop();	delete timer; timer = NULL;
+	delete curDateTimeLabel;	curDateTimeLabel = NULL;
+	delete toolKit;	toolKit = NULL;
 	if (plotTab->count() > 0)plotTab->clear();
-	delete plotTab;
-	plotTab = NULL;
+	delete plotTab;	plotTab = NULL;
 	if (editTab->count() > 0)editTab->clear();
-	delete editTab;
-	editTab = NULL;
-	delete globalSplitter;
+	delete editTab;	editTab = NULL;
+	delete globalSplitter; globalSplitter = NULL;
 }
+/*初始化*/
+void Vision::init() {
+	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
+	curDateTimeLabel->setAlignment(Qt::AlignRight);
+	statusBar()->addPermanentWidget(curDateTimeLabel);
 
+	//(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
+	//例如以下1号元素与2号元素宽度比为3：1
+	int ratio[] = { 1,1,1 };
+	for (int i = 0; i < 3; i++) {
+		globalSplitter->setStretchFactor(i, ratio[i]);
+	}
+	toolKit->setMinimumWidth(60);
+	toolKit->setMaximumWidth(200);
+	plotTab->setMinimumWidth(200);
+	editTab->setMinimumWidth(200);
+
+	this->setCentralWidget(globalSplitter);
+	this->setMinimumSize(900, 600);
+	showCurDateTime();
+	statusBar()->showMessage("initailizition finished!", 5000);
+
+	/*plot&edit test*/
+	for (int i = 0; i < 10; i++) {
+		PlotPad* pad = new PlotPad();
+		SmartEdit* edit = new SmartEdit();
+		plotTab->addTab(pad, QString::number(i));
+		editTab->addTab(edit, QString::number(i));
+	}
+	//加载qss
+	QFile file("./Resources/qss/global.qss");
+	file.open(QFile::ReadOnly);
+	setStyleSheet(file.readAll());
+	file.close();
+}
+/*时间标签*/
 void Vision::showCurDateTime() {
 	QString curDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd / hh:mm:ss");
 	curDateTimeLabel->setText(curDateTime);
@@ -102,7 +110,6 @@ int Vision::Quit() {
 		msgBox->setStyleSheet(file.readAll());
 		file.close();
 		choose = msgBox->exec();
-
 		if (QMessageBox::Yes == choose)  SaveAll();
 		if (choose != QMessageBox::Cancel) {
 			qApp->quit();
@@ -124,7 +131,7 @@ void Vision::About() {
 		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\
                                                     \n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\
                                                     \n@Document: 杨天舒\
-                                                    \n@Version: 1.01")
+                                                    \n@Version: 1.02")
 		, QMessageBox::Ok);
 	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭"));
 	QFile file("./Resources/qss/msgBox.qss");

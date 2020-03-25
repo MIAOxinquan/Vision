@@ -95,6 +95,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PlotPad.cpp" />
     <ClCompile Include="SmartEdit.cpp" />
+    <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ToolKit.cpp" />
     <ClCompile Include="Vision.cpp" />
   </ItemGroup>
@@ -112,6 +113,9 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Vision.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

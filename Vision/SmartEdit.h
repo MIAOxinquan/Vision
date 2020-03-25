@@ -6,6 +6,7 @@ class SmartEdit: public QPlainTextEdit
 public:
 	SmartEdit(QTabWidget* parent = Q_NULLPTR);
 	~SmartEdit();
+	void init();
 	int rowNumWidth();//ÐÐºÅ¿é¿í
 	void rowNumPlot(QPaintEvent* event);//ÐÐºÅÇø»æ»­
 
