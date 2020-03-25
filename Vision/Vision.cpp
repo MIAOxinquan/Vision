@@ -1,6 +1,5 @@
-#include "stdafx.h"
 #include "Vision.h"
-//last version 0.24
+//current version 1.01
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
@@ -23,6 +22,7 @@ Vision::Vision(QWidget* parent)
 	toolKit->setMaximumWidth(120);
 	plotTab->setMinimumWidth(180);
 	editTab->setMinimumWidth(180);
+
 	/*plot&edit test*/
 	for (int i = 0; i < 5; i++) {
 		PlotPad* pad = new PlotPad();
@@ -68,10 +68,17 @@ Vision::Vision(QWidget* parent)
 Vision::~Vision() {
 	timer->stop();
 	delete timer;
+	timer = NULL;
 	delete curDateTimeLabel;
+	curDateTimeLabel = NULL;
 	delete toolKit;
+	toolKit = NULL;
+	if (plotTab->count() > 0)plotTab->clear();
 	delete plotTab;
+	plotTab = NULL;
+	if (editTab->count() > 0)editTab->clear();
 	delete editTab;
+	editTab = NULL;
 	delete globalSplitter;
 }
 
@@ -82,7 +89,7 @@ void Vision::showCurDateTime() {
 /*退出程序*/
 int Vision::Quit() {
 	int choose = -1;
-	if (true) {
+	if (plotTab->count() > 0) {
 		QMessageBox* msgBox = new QMessageBox(
 			QMessageBox::Question
 			, QString::fromLocal8Bit("退出")
@@ -99,11 +106,9 @@ int Vision::Quit() {
 
 		if (QMessageBox::Yes == choose)  SaveAll();
 		if (choose != QMessageBox::Cancel) {
-			delete msgBox;
 			qApp->quit();
 		}
-	}
-	else {
+	} else {
 		qApp->quit();
 	}
 	return choose;
@@ -117,7 +122,10 @@ void Vision::About() {
 	QMessageBox* msgBox = new QMessageBox(
 		QMessageBox::Information
 		, QString::fromLocal8Bit("说明")
-		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\n@Document: 杨天舒")
+		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\
+                                                    \n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\
+                                                    \n@Document: 杨天舒\
+                                                    \n@Version: 1.01")
 		, QMessageBox::Ok);
 	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭"));
 	QFile file("./Resources/qss/msgBox.qss");

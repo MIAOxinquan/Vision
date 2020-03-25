@@ -28,12 +28,12 @@ QMenu {
     border:1px solid #0A86AF;
 }
 QMenu::item {
-    padding: 0px 25px 0px 25px;/*上右下左*/
+    padding: 0px 30px 0px 30px;/*上右下左*/
     height: 40px;
     border-radius: 20px;
 }
 QMenu::item:selected {
-    padding: 0px 15px 0px 15px;
+    padding: 0px 15px 0px 27px;
     background: #D7E9F5;
     color: black;
     border: 1px solid #0A86AF; /* reserve space for selection border */
@@ -145,7 +145,7 @@ QTabBar::tab {
     border-bottom-color: #9EC1E0; /* same as the pane color */
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    min-width: 25ex;
+    min-width: 12ex;
     padding: 3px;
 }
 QTabBar::tab:selected

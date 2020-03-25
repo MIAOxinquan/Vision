@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "SmartEdit.h"
 
 SmartEdit::SmartEdit(QTabWidget* parent)
@@ -24,7 +23,9 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 
 SmartEdit::~SmartEdit() {
 	delete rowNumArea;
+	rowNumArea = NULL;
 	delete keyWordsCompleter;
+	keyWordsCompleter = NULL;
 }
 
 /*重写：刷新大小*/
@@ -36,16 +37,17 @@ void SmartEdit::resizeEvent(QResizeEvent* event){
 /*按键事件*/
 void SmartEdit::keyPressEvent(QKeyEvent* event) {
 	QPlainTextEdit::keyPressEvent(event);
-	if (keyWordsCompleter && keyWordsCompleter->popup()->isVisible()) {
-		switch (event->key())
-		{
-		case Qt::Key_Enter:
-		case Qt::Key_Escape:
-		case Qt::Key_Return:
-		case Qt::Key_Tab:
-			event->ignore(); return;
-		default:break;
-		}
+	if (keyWordsCompleter ) {
+		if (keyWordsCompleter->popup()->isVisible()) {
+			switch (event->key()) {
+			case Qt::Key_Enter:
+			case Qt::Key_Escape:
+			case Qt::Key_Return:
+			case Qt::Key_Tab:
+				event->ignore(); return;
+			default:break;
+			}
+		} 
 	}
 
 }

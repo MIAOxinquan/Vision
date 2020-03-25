@@ -62,7 +62,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
@@ -95,10 +95,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PlotPad.cpp" />
     <ClCompile Include="SmartEdit.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="ToolKit.cpp" />
     <ClCompile Include="Vision.cpp" />
   </ItemGroup>
@@ -106,7 +102,6 @@
     <QtMoc Include="ToolKit.h" />
     <QtMoc Include="SmartEdit.h" />
     <QtMoc Include="PlotPad.h" />
-    <ClInclude Include="stdafx.h" />
     <QtMoc Include="Vision.h" />
   </ItemGroup>
   <ItemGroup>

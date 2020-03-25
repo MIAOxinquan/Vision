@@ -1,6 +1,5 @@
-#include "stdafx.h"
-#include "Vision.h"
 #include <QtWidgets/QApplication>
+#include "Vision.h"
 
 int main(int argc, char *argv[])
 {
