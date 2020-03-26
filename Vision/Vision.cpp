@@ -7,13 +7,14 @@ neighbour version means one of last few versions or current version
 ,for example versions 1.0, 1.01, 1.02 are regarded as neighbours
 ,if current version is 1.02
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
-*/
-//neighbour version : 1.06
-/*
-1.completer function fixed, for reason that QPlainTextEdit::keyPressEvent(event) in SmartEdit::keyPressEvent are placed incorrectly, it should be after switch state;
-2.initPrefix() removed, which already done in SmartEdit::keyPressEvent;
-3.SyntaxHighlighter optimized, on removing var QMap keywordColorCases and removing file reader, and meanwhile add getKeyColor() func;
-4.add handleSupp func, which makes completer more Intelligent;
+
+neighbour@
+version 1.07 forward to 1.1
+1.add completer.qss & list.qss;
+2.remould toolbar separator style in globle.qss 
+3.slightly change init function;
+4.ToolKit & PlotPad constructing, dragEvent basically finished, a keyword will appear where it's placed if the revelant tool is drag into smartEdit;
+5.add key "do" with pattern "\n{\n\n}while();", change pattern of key "while" from "()\n{\n\n}" to "()";
 */
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -61,32 +62,31 @@ Vision::~Vision() {
 /*初始化*/
 void Vision::init() {
 	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
-	curDateTimeLabel->setAlignment(Qt::AlignRight);
-	statusBar()->addPermanentWidget(curDateTimeLabel);
-
-	//(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
-	//例如以下1号元素与2号元素宽度比为3：1
-	int ratio[] = { 1,1,1 };
-	for (int i = 0; i < 3; i++) {
-		globalSplitter->setStretchFactor(i, ratio[i]);
-	}
+	//自定义中间区：工具框、图形区、代码框
 	toolKit->setMinimumWidth(60);
 	toolKit->setMaximumWidth(200);
 	plotTab->setMinimumWidth(200);
 	editTab->setMinimumWidth(200);
-
-	this->setCentralWidget(globalSplitter);
-	this->setMinimumSize(900, 600);
-	showCurDateTime();
-	statusBar()->showMessage("initailizition finished!", 5000);
-
-	/*plot&edit test*/
-	for (int i = 0; i < 5; i++) {
-		PlotPad* pad = new PlotPad();
-		plotTab->addTab(pad, QString::number(i));
-		SmartEdit* edit = new SmartEdit();
-		editTab->addTab(edit, QString::number(i));
+	/*plot & edit test*/
+	PlotPad* pad = new PlotPad();
+	plotTab->addTab(pad, "plotPad");
+	SmartEdit* edit = new SmartEdit();
+	editTab->addTab(edit, "smartEdit");
+	/*
+	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
+	例如以下1号元素与2号元素宽度比为3：1
+	*/
+	for (int i = 0; i < 3; i++) {
+		globalSplitter->setStretchFactor(i, 1);
 	}
+	//自定义下区：状态栏、时间标签
+	statusBar()->showMessage("initailizition finished!", 5000);
+	curDateTimeLabel->setAlignment(Qt::AlignRight);
+	statusBar()->addPermanentWidget(curDateTimeLabel);
+	showCurDateTime();
+	//全局窗口
+	setCentralWidget(globalSplitter);
+	setMinimumSize(900, 600);
 	//加载qss
 	QFile file("./Resources/qss/global.qss");
 	file.open(QFile::ReadOnly);
@@ -136,7 +136,7 @@ void Vision::About() {
 		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\
                                                     \n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\
                                                     \n@Document: 杨天舒\
-                                                    \n@Version: 1.02")
+                                                    \n@Version: 1.1")
 		, QMessageBox::Ok);
 	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭"));
 	QFile file("./Resources/qss/msgBox.qss");

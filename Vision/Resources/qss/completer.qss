@@ -1,0 +1,23 @@
+
+QScrollBar:vertical{
+    background: lightyellow;
+    width: 6px;
+}
+QScrollBar::handle:vertical{
+    width: 6px;
+    min-height: 30px;
+    background: lightblue;
+    border: 1px solid darkcyan;
+    border-radius: 3px;
+}
+QScrollBar::handle:vertical:hover{
+    background: lightskyblue;
+    border-radius: 3px;
+}
+QAbstractItemView{
+    color: darkslategray;
+    background: #D7E9F5;
+    border: 2px solid #0A86AF;
+    selection-background-color: #9EC1E0;
+    selection-color:lightyellow;
+}

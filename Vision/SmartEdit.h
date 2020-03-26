@@ -8,10 +8,10 @@ const QStringList keys = {
 	,"return","const","case","else"/*8,9,10,11,with space*/
 	,"default"/*12,with :*/
 	,"continue","break"/*13,14,with ;*/
-	,"if"/*15,with ()*/
-	,"while"/*16,with ()\n{\n\n}*/
+	,"if","while"/*15,16, with ()*/
 	,"for"/*17,with (;;)\n{\n\n}*/
-	,"switch"/*18,with ()\n{\ndefault: break;\n}*/ };
+	,"switch"/*18,with ()\n{\ndefault: break;\n}*/
+	,"do"/*19,with \n{\n\n}while();*/ };
 /*
 高亮器;
 必须写在SmartEdit前

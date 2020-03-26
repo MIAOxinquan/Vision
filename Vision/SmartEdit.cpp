@@ -33,7 +33,7 @@ QColor SyntaxLit::getKeyColor(QString matchedWord) {
 	if (keys.contains(matchedWord)) {
 		int index = keys.indexOf(matchedWord);
 		if (index <= 7) { return Qt::blue; }
-		else if (index <= 18) { return QColor(160, 32, 240); }
+		else if (index <= keys.count()) { return QColor(160, 32, 240); }
 	}
 	return Qt::black;
 }
@@ -50,7 +50,6 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	//槽函数
 	connect(keysCompleter, SIGNAL(activated(QString)), this, SLOT(smartComplete(QString)));
 	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(rowContentPlot()));
-
 }
 SmartEdit::~SmartEdit() {
 	delete keysCompleter;	keysCompleter = NULL;
@@ -59,15 +58,15 @@ SmartEdit::~SmartEdit() {
 }
 /*初始化*/
 void SmartEdit::init() {
+	keysCompleter = new QCompleter(keys);//不可改为new QCompleter(keys, this)
+	keysCompleter->setWidget(this);
+	keysCompleter->setCaseSensitivity(Qt::CaseSensitive); //区分大小写
+	keysCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
+	keysCompleter->setMaxVisibleItems(5);
+	keysCompleter->popup()->setFont(QFont("微软雅黑", 12, QFont::Bold));
 	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
 	setFont(QFont("微软雅黑", 12));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
-	keysCompleter = new QCompleter(keys);//不可更改为new QCompleter(keys, this)
-	keysCompleter->setWidget(this);
-	keysCompleter->setCaseSensitivity(Qt::CaseSensitive); 
-	keysCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
-	keysCompleter->popup()->setFont(QFont("微软雅黑", 12));
-	keysCompleter->setMaxVisibleItems(5);
 	//加载qss
 	QFile file("./Resources/qss/smart.qss");
 	file.open(QFile::ReadOnly);
@@ -104,8 +103,13 @@ void SmartEdit::keyPressEvent(QKeyEvent* event) {
 				curTextCursorRect = cursorRect();
 				keysCompleter->complete(
 					QRect(curTextCursorRect.left() + getRowNumWidth()
-						/*cursorRect()并未随rowContent与rowNum兼容宽度，因此左界加上行号块宽，使之看起来更舒适*/
-						, curTextCursorRect.top(), 150, fontMetrics().height()));
+						, curTextCursorRect.top(), 200, fontMetrics().height()));
+				//keysCompleter->completionModel()
+				//加载qss
+				QFile file("./Resources/qss/completer.qss");
+				file.open(QFile::ReadOnly);
+				keysCompleter->popup()->setStyleSheet(file.readAll());
+				file.close();
 			}
 		}
 	}
@@ -142,7 +146,7 @@ void SmartEdit::keyReleaseEvent(QKeyEvent* event) {
 int SmartEdit::getRowNumWidth() {
 	int digits = 4;//初始位数
 	int max = qMax(1, blockCount());//获取最大位数，默认至少1位
-	while (max >= 1000) {//2位数则宽度固定，3位数及其以上则宽度自增
+	while (max >= 1000) {//3位数则宽度固定，4位数及其以上则宽度自增
 		max /= 10;
 		++digits;
 	}
@@ -240,16 +244,8 @@ void SmartEdit::smartComplete(const QString& key) {
 		curTextCursor.insertText(supplement + ":"); break;
 	case 13:case 14:/*continue,break*/
 		curTextCursor.insertText(supplement + ";"); break;
-	case 15:/*if*/
+	case 15:case 16:/*if, while*/
 		curTextCursor.insertText(supplement + "()");
-		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
-		break;
-	case 16:/*while*/
-		curTextCursor.insertText(supplement + "()\n{\n\n}");
-		for (int i = 0; i < 3; i++) {
-			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
-		}
-		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
 		break;
 	case 17:/*for*/
@@ -270,6 +266,9 @@ void SmartEdit::smartComplete(const QString& key) {
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
 		break;
+	case 19:/*do*/
+		curTextCursor.insertText(supplement + "\n{\n\n}while();");
+		moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);	break;
 	}
 	textCursor().insertText(" ");
 }

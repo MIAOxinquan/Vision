@@ -1,0 +1,7 @@
+1.设置Release x64
+2.重新生成项目
+3.找到项目工程/x64/Release/项目名.exe
+4.新建一个项目文件夹，将3.的exe文件复制进来
+5.在新建文件夹打开cmd，输入指令
+   windeployqt Vision.exe
+   敲下回车等待成功即可

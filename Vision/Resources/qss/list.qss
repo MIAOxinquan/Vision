@@ -1,0 +1,41 @@
+/*滚动器设置*/
+.QScrollBar:vertical
+,.QScrollBar:horizontal{
+    margin:0;
+    padding: 0;
+    background:lightyellow;
+}
+.QScrollBar:vertical{width: 12px;}
+.QScrollBar:horizontal{height: 12px;}
+/*滚动条设置*/
+.QScrollBar::handle:vertical
+,.QScrollBar::handle:horizontal{
+    background:lightblue;
+    border: 1px solid darkcyan;
+    border-radius:6px;  
+}
+.QScrollBar::handle:vertical{ width:12px; min-height:30px;}
+.QScrollBar::handle:horizontal{height: 12px; min-width: 30px;}
+/*滚动条动画设置*/
+.QScrollBar::handle:vertical:hover
+,.QScrollBar::handle:horizontal:hover{
+    background:lightskyblue ;
+    border-radius: 6px;
+}
+QListWidget{
+    background:rgb(255,255,236);
+    color: darkcyan;
+    border: 2px solid #0A86AF;
+    border-radius: 6px;
+}
+QListWidget::item{
+    margin: 0;
+    height: 27px;
+    border-radius: 12px;
+}
+QListWidget::item:hover{
+    margin: -3px;
+    background: #D7E9F5;
+    color: black;
+    border: 2px solid rgb(255,255,236);
+}

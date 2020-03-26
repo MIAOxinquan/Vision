@@ -51,10 +51,10 @@
     <QtMoc Include="SmartEdit.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="ToolKit.h">
+    <QtMoc Include="PlotPad.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="PlotPad.h">
+    <QtMoc Include="ToolKit.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

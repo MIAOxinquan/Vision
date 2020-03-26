@@ -7,7 +7,6 @@ QMainWindow {
 QMenuBar {
     background:#9EC1E0;
     color: darkslategray;
-    border: 1px solid #D7E9F5;
     spacing: 1px; /* spacing between menu bar items */
 }
 QMenuBar::item {
@@ -23,8 +22,8 @@ QMenuBar::item:selected { /* when selected using mouse or keyboard */
 
 /*菜单*/
 QMenu {
-    background: #9EC1E0;
     color: darkslategray;
+    background: #9EC1E0;
     border:1px solid #0A86AF;
 }
 QMenu::item {
@@ -57,8 +56,9 @@ QMenu::indicator {
 /*工具栏*/
 QToolBar {
     background: #9EC1E0;
-    border: 1px solid #D7E9F5;
+    border: 2px solid #D7E9F5;
     spacing: 1px; /* spacing between items in the tool bar */
+    border-radius: 8px;
 }
 QToolBar::handle:horizontal
 ,QToolBar::handle:vertical {
@@ -94,9 +94,18 @@ QToolBar::handle:vertical:hover
 QToolBar::separator:horizontal
 ,QToolBar::separator:vertical {
     background: #D7E9F5;
+    border-radius: 4px;
 }
-QToolBar::separator:horizontal{margin-top: 3px; margin-bottom: 3px; width: 1px;}
-QToolBar::separator:vertical {margin-left: 3px; margin-right: 3px; height: 1px;}
+QToolBar::separator:horizontal{
+    margin-top: 14px; 
+    margin-bottom: 13px; 
+    width: 8px;
+}
+QToolBar::separator:vertical {
+    margin-left: 21px; 
+    margin-right: 21px; 
+    height: 8px;
+}
 /*
 QTabBar QToolButton::right-arrow 
 ,QTabBar QToolButton::left-arrow { the arrow mark in the tool buttons 
