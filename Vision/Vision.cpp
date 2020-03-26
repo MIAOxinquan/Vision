@@ -8,7 +8,7 @@ neighbour version means one of last few versions or current version
 ,if current version is 1.02
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 */
-//neighbour version : 1.03
+//neighbour version : 1.05
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -76,10 +76,10 @@ void Vision::init() {
 	statusBar()->showMessage("initailizition finished!", 5000);
 
 	/*plot&edit test*/
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 5; i++) {
 		PlotPad* pad = new PlotPad();
-		SmartEdit* edit = new SmartEdit();
 		plotTab->addTab(pad, QString::number(i));
+		SmartEdit* edit = new SmartEdit();
 		editTab->addTab(edit, QString::number(i));
 	}
 	//º”‘ÿqss
