@@ -8,8 +8,13 @@ neighbour version means one of last few versions or current version
 ,if current version is 1.02
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 */
-//neighbour version : 1.05
-
+//neighbour version : 1.06
+/*
+1.completer function fixed, for reason that QPlainTextEdit::keyPressEvent(event) in SmartEdit::keyPressEvent are placed incorrectly, it should be after switch state;
+2.initPrefix() removed, which already done in SmartEdit::keyPressEvent;
+3.SyntaxHighlighter optimized, on removing var QMap keywordColorCases and removing file reader, and meanwhile add getKeyColor() func;
+4.add handleSupp func, which makes completer more Intelligent;
+*/
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))

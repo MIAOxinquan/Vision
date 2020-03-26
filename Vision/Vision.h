@@ -26,10 +26,6 @@ private:
 	QTabWidget* plotTab, * editTab;
 	QTimer* timer;
 
-public slots:
-	void About();
-	void showCurDateTime();
-
 private slots:
 	//大写是为避免和qt自带函数重名
 	void Undo();
@@ -45,6 +41,8 @@ private slots:
 	void SaveAll();
 	void SaveAs();
 	void Close();
-	int Quit();
+	void About();
+	void showCurDateTime();
 	void getCode();
+	int Quit();
 };

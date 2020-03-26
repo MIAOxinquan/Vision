@@ -1,17 +1,28 @@
 #include <QtWidgets>
 #include <QByteArray>
 
-const QStringList keyWords = { "void","int","float","double","string","char","if","else","switch","for","while" };
+const QStringList keys = {
+	"void","int","float","double","char","string"/*0-5,with space*/
+	,"class","struct"/*6,7, with  \n{\n\n};*/
+	/*0-7,blue above and 8-18,purple below*/
+	,"return","const","case","else"/*8,9,10,11,with space*/
+	,"default"/*12,with :*/
+	,"continue","break"/*13,14,with ;*/
+	,"if"/*15,with ()*/
+	,"while"/*16,with ()\n{\n\n}*/
+	,"for"/*17,with (;;)\n{\n\n}*/
+	,"switch"/*18,with ()\n{\ndefault: break;\n}*/ };
 /*
-高亮器
+高亮器;
 必须写在SmartEdit前
 */
 class SyntaxLit : public QSyntaxHighlighter {
 	Q_OBJECT
 public:
 	SyntaxLit(QTextDocument* document = NULL);
-protected:	void highlightBlock(const QString& text);
-private:		QRegularExpression litRegExp;
+	QColor getKeyColor(QString key);
+protected:	void highlightBlock(const QString& rowText);
+private:		QRegularExpression keysRegExp;
 };
 
 class SmartEdit: public QPlainTextEdit {
@@ -20,9 +31,9 @@ public:
 	SmartEdit(QTabWidget* parent = Q_NULLPTR);
 	~SmartEdit();
 	void init();
-	int rowNumWidth();//行号块宽
+	//以下两个函数公有，因为RowNumArea需要
+	int getRowNumWidth();//行号块宽
 	void rowNumPlot(QPaintEvent* event);//行号区绘画
-	QString getCurPrefix() const;
 
 protected:
 	void resizeEvent(QResizeEvent* event)override;
@@ -30,28 +41,28 @@ protected:
 	void keyReleaseEvent(QKeyEvent* event);
 
 private:
-	QString completionPrefix;
+	QString curPrefix;
 	QTextCursor curTextCursor;
-	QRect curTextCursorRect;
+	QRect curTextCursorRect;/*因为在函数中频繁调用prefix、textCursor以及rect的获取函数，特地用三个变量来替代以节省指令*/
 	QWidget* rowNumArea;
-	QCompleter* kWordsCompleter;
+	QCompleter* keysCompleter;
 	SyntaxLit* syntaxLit;
+
+	QString getPrefix() const;
 	
-public slots:
-	void completeKWord(const QString& completion);//补全关键字
-	void updatePrefix(void);//更新前缀
 private slots:
 	void rowContentPlot();//单行文本块绘画
+	void smartComplete(const QString& key);//智能补全关键字
 };
 
 /*
-行号区
+行号区;
 必须写在SmartEdit后
 */
 class RowNumArea : public QWidget {
 public:
 	explicit RowNumArea(SmartEdit* smartEdit) : QWidget(smartEdit) { smart = smartEdit; }
-	QSize sizeHint() const override { return QSize(smart->rowNumWidth(), 0); }
+	QSize sizeHint() const override { return QSize(smart->getRowNumWidth(), 0); }
 protected:
 	void paintEvent(QPaintEvent* event) override { smart->rowNumPlot(event); }
 private: 	SmartEdit* smart;

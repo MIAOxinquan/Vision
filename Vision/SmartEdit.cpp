@@ -2,58 +2,72 @@
 
 /*高亮器*/
 SyntaxLit::SyntaxLit(QTextDocument* document)
-	:QSyntaxHighlighter(document) {
-	QString keyWordPattern;
-	for (int i = 0; i < keyWords.count(); i++) {
-		keyWordPattern.append(keyWords.at(i) + "|");
+	:QSyntaxHighlighter(document) { 
+	QString keysPattern;
+	for (int i = 0; i < keys.count(); i++) {
+		keysPattern.append(keys.at(i) + "|");
 	}
-	litRegExp.setPattern(keyWordPattern.trimmed());
+	keysRegExp.setPattern(keysPattern.trimmed());
 }
 /*
 语法高亮
 虚函数，同名函数必须实现，函数名不可更改
 */
-void SyntaxLit::highlightBlock(const QString& text) {
-	QTextCharFormat hTextCharFormat;
-	hTextCharFormat.setFontWeight(QFont::Bold);
-	QRegularExpressionMatchIterator keyWordIterator = litRegExp.globalMatch(text);
-	while (keyWordIterator.hasNext()) {
-		QRegularExpressionMatch matchedWord = keyWordIterator.next();
-		hTextCharFormat.setForeground(QBrush(QColor(0, 0, 255)));//160, 32, 240
-		setFormat(matchedWord.capturedStart(), matchedWord.capturedLength(), hTextCharFormat);
+void SyntaxLit::highlightBlock(const QString& rowText) {
+	QTextCharFormat textCharFormat;
+	textCharFormat.setFontWeight(QFont::Bold);
+	/*
+	globalMatch(rowText)作用是，在每行文本QString : rowText遍历匹配任何符合正则表达式的字段
+	比如一段文字“intint int func 123 111 int“，正则式包含”int“
+	那么将匹配到四个”int“，即使前两个”int“相连
+	*/
+	QRegularExpressionMatchIterator matchedItr = keysRegExp.globalMatch(rowText);
+	while (matchedItr.hasNext()) {//只要keyIterator存在
+		QRegularExpressionMatch matchedWord = matchedItr.next();
+		textCharFormat.setForeground(QBrush(getKeyColor(matchedWord.captured())));
+		setFormat(matchedWord.capturedStart(), matchedWord.capturedLength(), textCharFormat);
 	}
+}
+/*词色转换*/
+QColor SyntaxLit::getKeyColor(QString matchedWord) {
+	if (keys.contains(matchedWord)) {
+		int index = keys.indexOf(matchedWord);
+		if (index <= 7) { return Qt::blue; }
+		else if (index <= 18) { return QColor(160, 32, 240); }
+	}
+	return Qt::black;
 }
 
 /*smart*/
 SmartEdit::SmartEdit(QTabWidget* parent)
 	:QPlainTextEdit(parent)
 	, rowNumArea(new RowNumArea(this))
-	, kWordsCompleter(NULL)
+	, keysCompleter(NULL)
 	, syntaxLit(new SyntaxLit(this->document()))
 {
 	init();//初始化
 	rowContentPlot();//初始化刷新行号块
 	//槽函数
-	connect(kWordsCompleter, SIGNAL(activated(QString)), this, SLOT(completeKWord(QString)));
+	connect(keysCompleter, SIGNAL(activated(QString)), this, SLOT(smartComplete(QString)));
 	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(rowContentPlot()));
-	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(updatePrefix()));
 
 }
 SmartEdit::~SmartEdit() {
+	delete keysCompleter;	keysCompleter = NULL;
+	delete syntaxLit; syntaxLit = NULL;
 	delete rowNumArea;	rowNumArea = NULL;
-	delete kWordsCompleter;	kWordsCompleter = NULL;
 }
 /*初始化*/
 void SmartEdit::init() {
 	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
 	setFont(QFont("微软雅黑", 12));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
-	kWordsCompleter = new QCompleter(keyWords);
-	kWordsCompleter->setWidget(this);
-	kWordsCompleter->setCaseSensitivity(Qt::CaseSensitive); 
-	kWordsCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
-	kWordsCompleter->popup()->setFont(QFont("微软雅黑", 12));
-	kWordsCompleter->setMaxVisibleItems(5);
+	keysCompleter = new QCompleter(keys);//不可更改为new QCompleter(keys, this)
+	keysCompleter->setWidget(this);
+	keysCompleter->setCaseSensitivity(Qt::CaseSensitive); 
+	keysCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
+	keysCompleter->popup()->setFont(QFont("微软雅黑", 12));
+	keysCompleter->setMaxVisibleItems(5);
 	//加载qss
 	QFile file("./Resources/qss/smart.qss");
 	file.open(QFile::ReadOnly);
@@ -63,31 +77,36 @@ void SmartEdit::init() {
 /*重写：刷新大小*/
 void SmartEdit::resizeEvent(QResizeEvent* event){
 	QRect rct = contentsRect();
-	rowNumArea->setGeometry(QRect(rct.left(), rct.top(), rowNumWidth(), rct.height()));
+	rowNumArea->setGeometry(QRect(rct.left(), rct.top(), getRowNumWidth(), rct.height()));
 }
 /*按键事件*/
 void SmartEdit::keyPressEvent(QKeyEvent* event) {
-	QPlainTextEdit::keyPressEvent(event);
-	if (kWordsCompleter) {
-		if (kWordsCompleter->popup()->isVisible()) {
+	if (keysCompleter) {
+		if (keysCompleter->popup()->isVisible()) {
 			switch (event->key()) {
-			case Qt::Key_Enter:
 			case Qt::Key_Escape:
+			case Qt::Key_Enter:
 			case Qt::Key_Return:
 			case Qt::Key_Tab:
 				event->ignore(); return;
 			default:break;
 			}
 		}
-    	completionPrefix = getCurPrefix();
-		kWordsCompleter->setCompletionPrefix(completionPrefix);
-		if (completionPrefix == "") { return; }
-		if (kWordsCompleter->completionCount() > 0) {
-			curTextCursorRect = cursorRect();
-			kWordsCompleter->complete(QRect(curTextCursorRect.left() + rowNumWidth()
-				, curTextCursorRect.top() + fontMetrics().height(), 150, 1));
-		} else {
-			kWordsCompleter->popup()->setVisible(false);
+		QPlainTextEdit::keyPressEvent(event);//继承事件可以看作一种开关，相当于更新event，此处位置不可调前
+		curPrefix = getPrefix();
+		keysCompleter->setCompletionPrefix(curPrefix); // 设置前缀，使Completer寻找关键词
+		if (curPrefix == "") { 
+			keysCompleter->popup()->setVisible(false); return; 
+		} else	{
+			if (0==keysCompleter->completionCount()) {
+				keysCompleter->popup()->setVisible(false); return;
+			} else {
+				curTextCursorRect = cursorRect();
+				keysCompleter->complete(
+					QRect(curTextCursorRect.left() + getRowNumWidth()
+						/*cursorRect()并未随rowContent与rowNum兼容宽度，因此左界加上行号块宽，使之看起来更舒适*/
+						, curTextCursorRect.top(), 150, fontMetrics().height()));
+			}
 		}
 	}
 }
@@ -120,7 +139,7 @@ void SmartEdit::keyReleaseEvent(QKeyEvent* event) {
 	}
 }
 /*行号块宽*/
-int SmartEdit::rowNumWidth() {
+int SmartEdit::getRowNumWidth() {
 	int digits = 4;//初始位数
 	int max = qMax(1, blockCount());//获取最大位数，默认至少1位
 	while (max >= 1000) {//2位数则宽度固定，3位数及其以上则宽度自增
@@ -155,7 +174,7 @@ void SmartEdit::rowNumPlot(QPaintEvent* event) {
 /*文本区绘图*/
 void SmartEdit::rowContentPlot(/*int*/) {
 	//设置文本宽度，使之与行号区适配
-	setViewportMargins(rowNumWidth() - 3, -1, -3, 0);
+	setViewportMargins(getRowNumWidth() - 3, -1, -3, 0);
 	//当前行高亮
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
@@ -167,45 +186,90 @@ void SmartEdit::rowContentPlot(/*int*/) {
 		extraSelections.append(selection);
 		setExtraSelections(extraSelections);
 	}
+	//initPrefix();
 }
 /*获取前缀：光标处至上一个空格之间的字符串*/
-QString SmartEdit::getCurPrefix() const {
+QString SmartEdit::getPrefix() const {
 	QString selectedText;
-	QTextCursor curTextCursor = textCursor();//只能用变量获取当前光标，不能用textCursor()直接操作，否则导致崩溃
-	//不断向左移动cursor，并选中字符，并查看选中的单词中是否含有空格——空格作为单词的分隔符
+	/*
+	获取textCursor的副本以模拟左移获取选择文本，如此不会影响到实际光标的位置
+	不能用textCursor()直接操作，否则导致崩溃
+	*/
+	QTextCursor curTextCursor = textCursor();
 	while (curTextCursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, 1)) {
-		selectedText = curTextCursor.selectedText();
-		if (selectedText.startsWith(QString(" "))
-			|| selectedText.startsWith(QChar(0x422029))) {
-			break;
+		selectedText = curTextCursor.selectedText();//只要不遇到空格或者换行符，就获取选择文本
+		if (selectedText.startsWith(QString(" ")) || selectedText.startsWith(QChar(0x422029))) {
+			break;//左移至出现空格或者换行符时终止
 		}
 	}
 	if (selectedText.startsWith(QChar(0x422029))) {
-		selectedText.replace(0, 1, QChar(' '));
+		selectedText.replace(0, 1, QChar(' '));//换行符则替换为空格
+	}
+	if (keys.contains(selectedText.trimmed())) { 
+		return "";//全匹配则不需要补全，前缀设置空
 	}
 	return selectedText.trimmed();
 }
-/*前缀更新*/
-void SmartEdit::updatePrefix() {
-
-	QString curPrefix = getCurPrefix();
-	if (curPrefix == "") {
-		kWordsCompleter->setCompletionPrefix("----");
-		curTextCursorRect = cursorRect();
-		kWordsCompleter->complete(QRect(curTextCursorRect.left(), curTextCursorRect.top(), 0, 0));
-	}
-}
-/*补全关键字*/
-void SmartEdit::completeKWord(const QString& completion) {
-	QString curPrefix = getCurPrefix(),
-		shouldInsertText = completion;
+/*智能补全*/
+void SmartEdit::smartComplete(const QString& key) {
+	QString curPrefix = getPrefix(),
+		supplement = key;
 	curTextCursor = textCursor();
-	if (!completion.contains(curPrefix)) {  // 删除之前未打全的字符
+	if (!key.contains(curPrefix)) { //前缀不匹配关键字则取消选择
 		curTextCursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, curPrefix.size());
 		curTextCursor.clearSelection();
 	}
-	else {  // 补全相应的字符
-		shouldInsertText = shouldInsertText.replace(
-			shouldInsertText.indexOf(curPrefix), curPrefix.size(), "");
-	}curTextCursor.insertText(shouldInsertText);
+	else { //前缀匹配关键字则获取还未输入的部分
+		supplement = supplement.replace(supplement.indexOf(curPrefix), curPrefix.size(), "");
+	}
+	//不需要判断界限，因为参数一定是key
+	int index = keys.indexOf(key);
+	//以下是智能处理核心
+	switch (index)
+	{
+	default:/*0-5,8-11,void, int, float, double, char, string, return, const, case, else*/
+		curTextCursor.insertText(supplement); break;
+	case 6:case 7:/*class, struct*/
+		curTextCursor.insertText(supplement + "\n{\n\n};");
+		for (int i = 0; i < 3; i++) {
+			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+		}
+		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+		break;
+	case 12:/*default*/
+		curTextCursor.insertText(supplement + ":"); break;
+	case 13:case 14:/*continue,break*/
+		curTextCursor.insertText(supplement + ";"); break;
+	case 15:/*if*/
+		curTextCursor.insertText(supplement + "()");
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
+	case 16:/*while*/
+		curTextCursor.insertText(supplement + "()\n{\n\n}");
+		for (int i = 0; i < 3; i++) {
+			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+		}
+		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
+	case 17:/*for*/
+		curTextCursor.insertText(supplement + "(;;)\n{\n\n}");
+		for (int i = 0; i < 3; i++) {
+			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+		}
+		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+		for (int i = 0; i < 3; i++) {
+			moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		}
+		break;
+	case 18:/*switch*/
+		curTextCursor.insertText(supplement + "()\n{\ndefault: break;\n}");
+		for (int i = 0; i < 3; i++) {
+			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+		}
+		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+		break;
+	}
+	textCursor().insertText(" ");
 }
