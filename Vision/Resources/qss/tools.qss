@@ -24,18 +24,19 @@
 }
 QListWidget{
     background:rgb(255,255,236);
-    color: darkcyan;
     border: 2px solid #0A86AF;
     border-radius: 6px;
 }
 QListWidget::item{
-    margin: 0;
+    margin: 1px;
     height: 27px;
-    border-radius: 12px;
+    background: #D7E9F5;
+    border: 2px solid lightskyblue;
+    border-radius: 9px;
 }
 QListWidget::item:hover{
-    margin: -3px;
-    background: #D7E9F5;
-    color: black;
-    border: 2px solid rgb(255,255,236);
+    margin: 0;
+    background: #9EC1E0;
+    color: lightyellow;
+    border: 2px solid #D7E9F5;
 }

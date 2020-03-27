@@ -1,3 +1,4 @@
+#include "global.h"
 #include "Vision.h"
 #include "ToolKit.h"
 #include "PlotPad.h"
@@ -9,12 +10,20 @@ neighbour version means one of last few versions or current version
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 
 neighbour@
-version 1.07 forward to 1.1
-1.add completer.qss & list.qss;
-2.remould toolbar separator style in globle.qss 
-3.slightly change init function;
-4.ToolKit & PlotPad constructing, dragEvent basically finished, a keyword will appear where it's placed if the revelant tool is drag into smartEdit;
-5.add key "do" with pattern "\n{\n\n}while();", change pattern of key "while" from "()\n{\n\n}" to "()";
+version 1.11 forward to 1.3
+1.add .qss into .qrc, use QPath replace with CPath;
+2.remove stdafx.h & .cpp
+3.move QStringList : keys into new head file global.h
+4.restruct data of ToolKit, only remain QPoint:pressPoint &	QListWidgetItem* :toolPressed, besides,convert enum:toolType to QStringList:toolKeys;
+5.polish several toolPics, setIconSize dispalyed in toolKit;
+6.add dropEvent in smartedit;
+7.add key "if_else";
+8.add QStringList smarts to suit dataStructure of toolKit&smartEdit;
+9.add func getToolKeyColor to make tools text colorful;
+10.add func loadStyleSheet to make load_qss code easier for programmer;
+11.add global.h and global.cpp, move keys, toolKeys, smarts, func loadStyleSheet() declare into .h and achieve the func in .cpp;
+12.add QStringList:toolSmarts into global.h and func smartDrop() into SmartEdit, use index as medium signal, make drop from toolKit to smartEdit more intelligent;
+13.add QStringList:undefined in global.h to support type or text to be determined, which are displayed as selected text and make completion smart futhur;
 */
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -50,14 +59,14 @@ Vision::Vision(QWidget* parent)
 
 }
 Vision::~Vision() {
-	timer->stop();	delete timer; timer = NULL;
-	delete curDateTimeLabel;	curDateTimeLabel = NULL;
-	delete toolKit;	toolKit = NULL;
+	timer->stop();	delete timer; timer = Q_NULLPTR;
+	delete curDateTimeLabel;	curDateTimeLabel = Q_NULLPTR;
+	delete toolKit;	toolKit = Q_NULLPTR;
 	if (plotTab->count() > 0)plotTab->clear();
-	delete plotTab;	plotTab = NULL;
+	delete plotTab;	plotTab = Q_NULLPTR;
 	if (editTab->count() > 0)editTab->clear();
-	delete editTab;	editTab = NULL;
-	delete globalSplitter; globalSplitter = NULL;
+	delete editTab;	editTab = Q_NULLPTR;
+	delete globalSplitter; globalSplitter = Q_NULLPTR;
 }
 /*初始化*/
 void Vision::init() {
@@ -67,11 +76,6 @@ void Vision::init() {
 	toolKit->setMaximumWidth(200);
 	plotTab->setMinimumWidth(200);
 	editTab->setMinimumWidth(200);
-	/*plot & edit test*/
-	PlotPad* pad = new PlotPad();
-	plotTab->addTab(pad, "plotPad");
-	SmartEdit* edit = new SmartEdit();
-	editTab->addTab(edit, "smartEdit");
 	/*
 	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
 	例如以下1号元素与2号元素宽度比为3：1
@@ -87,12 +91,15 @@ void Vision::init() {
 	//全局窗口
 	setCentralWidget(globalSplitter);
 	setMinimumSize(900, 600);
+	//变量初始化
+	PlotPad* pad = new PlotPad();
+	plotTab->addTab(pad, "plotPad");
+	SmartEdit* edit = new SmartEdit();
+	editTab->addTab(edit, "smartEdit");
 	//加载qss
-	QFile file("./Resources/qss/global.qss");
-	file.open(QFile::ReadOnly);
-	setStyleSheet(file.readAll());
-	file.close();
+	loadStyleSheet(this, "global.qss");
 }
+
 /*时间标签*/
 void Vision::showCurDateTime() {
 	QString curDateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd / hh:mm:ss");
@@ -110,10 +117,7 @@ int Vision::Quit() {
 		msgBox->button(QMessageBox::Yes)->setText(QString::fromLocal8Bit("保存退出"));
 		msgBox->button(QMessageBox::No)->setText(QString::fromLocal8Bit("直接退出"));
 		msgBox->button(QMessageBox::Cancel)->setText(QString::fromLocal8Bit("取消"));
-		QFile file("./Resources/qss/msgBox.qss");
-		file.open(QFile::ReadOnly);
-		msgBox->setStyleSheet(file.readAll());
-		file.close();
+		loadStyleSheet(msgBox, "msgBox.qss");
 		choose = msgBox->exec();
 		if (QMessageBox::Yes == choose)  SaveAll();
 		if (choose != QMessageBox::Cancel) {
@@ -138,11 +142,8 @@ void Vision::About() {
                                                     \n@Document: 杨天舒\
                                                     \n@Version: 1.1")
 		, QMessageBox::Ok);
-	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭"));
-	QFile file("./Resources/qss/msgBox.qss");
-	file.open(QFile::ReadOnly);
-	msgBox->setStyleSheet(file.readAll());
-	file.close();
+	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭")); 
+	loadStyleSheet(msgBox, "msgBox.qss");
 	msgBox->exec();
 }
 /*撤回*/

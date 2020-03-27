@@ -57,7 +57,7 @@ QMenu::indicator {
 QToolBar {
     background: #9EC1E0;
     border: 2px solid #D7E9F5;
-    spacing: 1px; /* spacing between items in the tool bar */
+    spacing: 3px; /* spacing between items in the tool bar */
     border-radius: 8px;
 }
 QToolBar::handle:horizontal

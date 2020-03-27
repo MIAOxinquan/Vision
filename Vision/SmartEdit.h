@@ -1,17 +1,6 @@
 #include <QtWidgets>
 #include <QByteArray>
 
-const QStringList keys = {
-	"void","int","float","double","char","string"/*0-5,with space*/
-	,"class","struct"/*6,7, with  \n{\n\n};*/
-	/*0-7,blue above and 8-18,purple below*/
-	,"return","const","case","else"/*8,9,10,11,with space*/
-	,"default"/*12,with :*/
-	,"continue","break"/*13,14,with ;*/
-	,"if","while"/*15,16, with ()*/
-	,"for"/*17,with (;;)\n{\n\n}*/
-	,"switch"/*18,with ()\n{\ndefault: break;\n}*/
-	,"do"/*19,with \n{\n\n}while();*/ };
 /*
 高亮器;
 必须写在SmartEdit前
@@ -19,7 +8,7 @@ const QStringList keys = {
 class SyntaxLit : public QSyntaxHighlighter {
 	Q_OBJECT
 public:
-	SyntaxLit(QTextDocument* document = NULL);
+	SyntaxLit(QTextDocument* document = Q_NULLPTR);
 	QColor getKeyColor(QString key);
 protected:	void highlightBlock(const QString& rowText);
 private:		QRegularExpression keysRegExp;
@@ -31,24 +20,27 @@ public:
 	SmartEdit(QTabWidget* parent = Q_NULLPTR);
 	~SmartEdit();
 	void init();
-	//以下两个函数公有，因为RowNumArea需要
+	//以下两个函数公有，因为Class RowNumArea需要
 	int getRowNumWidth();//行号块宽
 	void rowNumPlot(QPaintEvent* event);//行号区绘画
 
 protected:
 	void resizeEvent(QResizeEvent* event)override;
-	void keyPressEvent(QKeyEvent* event);
-	void keyReleaseEvent(QKeyEvent* event);
+	void keyPressEvent(QKeyEvent* event)override;
+	void keyReleaseEvent(QKeyEvent* event)override;
+	void dropEvent(QDropEvent* event)override;
 
 private:
+	/*变量*/
 	QString curPrefix;
 	QTextCursor curTextCursor;
 	QRect curTextCursorRect;/*因为在函数中频繁调用prefix、textCursor以及rect的获取函数，特地用三个变量来替代以节省指令*/
 	QWidget* rowNumArea;
 	QCompleter* keysCompleter;
 	SyntaxLit* syntaxLit;
-
+	/*函数*/
 	QString getPrefix() const;
+	void smartDrop(int index);
 	
 private slots:
 	void rowContentPlot();//单行文本块绘画

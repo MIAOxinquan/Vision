@@ -164,7 +164,7 @@
   <action name="actionNew">
    <property name="icon">
     <iconset theme="New" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/New.png</normaloff>:/Vision/Resources/icon/New.png</iconset>
+     <normaloff>:/Resources/icon/New.png</normaloff>:/Resources/icon/New.png</iconset>
    </property>
    <property name="text">
     <string>新建</string>
@@ -185,7 +185,7 @@
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="Open" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Open.png</normaloff>:/Vision/Resources/icon/Open.png</iconset>
+     <normaloff>:/Resources/icon/Open.png</normaloff>:/Resources/icon/Open.png</iconset>
    </property>
    <property name="text">
     <string>打开</string>
@@ -203,7 +203,7 @@
   <action name="actionSave">
    <property name="icon">
     <iconset theme="Save" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Save.png</normaloff>:/Vision/Resources/icon/Save.png</iconset>
+     <normaloff>:/Resources/icon/Save.png</normaloff>:/Resources/icon/Save.png</iconset>
    </property>
    <property name="text">
     <string>保存</string>
@@ -224,7 +224,7 @@
   <action name="actionSaveAll">
    <property name="icon">
     <iconset theme="SaveAll" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/SaveAll.png</normaloff>:/Vision/Resources/icon/SaveAll.png</iconset>
+     <normaloff>:/Resources/icon/SaveAll.png</normaloff>:/Resources/icon/SaveAll.png</iconset>
    </property>
    <property name="text">
     <string>全存</string>
@@ -242,7 +242,7 @@
   <action name="actionSaveAs">
    <property name="icon">
     <iconset theme="SaveAs" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/SaveAs.png</normaloff>:/Vision/Resources/icon/SaveAs.png</iconset>
+     <normaloff>:/Resources/icon/SaveAs.png</normaloff>:/Resources/icon/SaveAs.png</iconset>
    </property>
    <property name="text">
     <string>导出</string>
@@ -260,7 +260,7 @@
   <action name="actionClose">
    <property name="icon">
     <iconset theme="Close" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Close.png</normaloff>:/Vision/Resources/icon/Close.png</iconset>
+     <normaloff>:/Resources/icon/Close.png</normaloff>:/Resources/icon/Close.png</iconset>
    </property>
    <property name="text">
     <string>关闭</string>
@@ -278,7 +278,7 @@
   <action name="actionQuit">
    <property name="icon">
     <iconset theme="Quit" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Quit.png</normaloff>:/Vision/Resources/icon/Quit.png</iconset>
+     <normaloff>:/Resources/icon/Quit.png</normaloff>:/Resources/icon/Quit.png</iconset>
    </property>
    <property name="text">
     <string>退出</string>
@@ -296,7 +296,7 @@
   <action name="actionUndo">
    <property name="icon">
     <iconset theme="Undo" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Undo.png</normaloff>:/Vision/Resources/icon/Undo.png</iconset>
+     <normaloff>:/Resources/icon/Undo.png</normaloff>:/Resources/icon/Undo.png</iconset>
    </property>
    <property name="text">
     <string>撤销</string>
@@ -314,7 +314,7 @@
   <action name="actionRedo">
    <property name="icon">
     <iconset theme="Redo" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Redo.png</normaloff>:/Vision/Resources/icon/Redo.png</iconset>
+     <normaloff>:/Resources/icon/Redo.png</normaloff>:/Resources/icon/Redo.png</iconset>
    </property>
    <property name="text">
     <string>重做</string>
@@ -332,7 +332,7 @@
   <action name="actionCopy">
    <property name="icon">
     <iconset theme="Copy" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Copy.png</normaloff>:/Vision/Resources/icon/Copy.png</iconset>
+     <normaloff>:/Resources/icon/Copy.png</normaloff>:/Resources/icon/Copy.png</iconset>
    </property>
    <property name="text">
     <string>复制</string>
@@ -350,7 +350,7 @@
   <action name="actionPaste">
    <property name="icon">
     <iconset theme="Paste" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Paste.png</normaloff>:/Vision/Resources/icon/Paste.png</iconset>
+     <normaloff>:/Resources/icon/Paste.png</normaloff>:/Resources/icon/Paste.png</iconset>
    </property>
    <property name="text">
     <string>粘贴</string>
@@ -368,7 +368,7 @@
   <action name="actionCut">
    <property name="icon">
     <iconset theme="Cut" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Cut.png</normaloff>:/Vision/Resources/icon/Cut.png</iconset>
+     <normaloff>:/Resources/icon/Cut.png</normaloff>:/Resources/icon/Cut.png</iconset>
    </property>
    <property name="text">
     <string>剪切</string>
@@ -386,7 +386,7 @@
   <action name="actionSelectAll">
    <property name="icon">
     <iconset theme="SelectAll" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/SelectAll.png</normaloff>:/Vision/Resources/icon/SelectAll.png</iconset>
+     <normaloff>:/Resources/icon/SelectAll.png</normaloff>:/Resources/icon/SelectAll.png</iconset>
    </property>
    <property name="text">
     <string>全选</string>
@@ -404,7 +404,7 @@
   <action name="actionGetCode">
    <property name="icon">
     <iconset theme="getCode" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/getCode.png</normaloff>:/Vision/Resources/icon/getCode.png</iconset>
+     <normaloff>:/Resources/icon/getCode.png</normaloff>:/Resources/icon/getCode.png</iconset>
    </property>
    <property name="text">
     <string>取码</string>
@@ -422,7 +422,7 @@
   <action name="actionAttribute">
    <property name="icon">
     <iconset theme="Attribute" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Attritube.png</normaloff>:/Vision/Resources/icon/Attritube.png</iconset>
+     <normaloff>:/Resources/icon/Attritube.png</normaloff>:/Resources/icon/Attritube.png</iconset>
    </property>
    <property name="text">
     <string>属性</string>
@@ -443,7 +443,7 @@
    </property>
    <property name="icon">
     <iconset theme="About" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/About.png</normaloff>:/Vision/Resources/icon/About.png</iconset>
+     <normaloff>:/Resources/icon/About.png</normaloff>:/Resources/icon/About.png</iconset>
    </property>
    <property name="text">
     <string>关于</string>
@@ -461,7 +461,7 @@
   <action name="actionDelete">
    <property name="icon">
     <iconset theme="Delete" resource="Vision.qrc">
-     <normaloff>:/Vision/Resources/icon/Delete.png</normaloff>:/Vision/Resources/icon/Delete.png</iconset>
+     <normaloff>:/Resources/icon/Delete.png</normaloff>:/Resources/icon/Delete.png</iconset>
    </property>
    <property name="text">
     <string>删除</string>

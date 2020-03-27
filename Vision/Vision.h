@@ -1,5 +1,6 @@
 #include <QtWidgets>
 #include "ui_Vision.h"
+
 namespace Ui {
 	class Vision;
 }
