@@ -10,8 +10,8 @@ neighbour version means one of last few versions or current version
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 
 neighbour@
-version 1.31
-delete stdafx files forever;
+version 1.32
+in project attribute->Qt Meta Object Complier->moc->prepend include, set nothing(remove stdfax.h);
 */
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)

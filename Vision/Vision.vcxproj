@@ -74,7 +74,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtMoc>
-      <PrependInclude>stdafx.h</PrependInclude>
+      <PrependInclude>
+      </PrependInclude>
     </QtMoc>
     <ClCompile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
