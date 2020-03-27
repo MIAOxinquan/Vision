@@ -35,7 +35,7 @@ QColor ToolKit::getToolKeyColor(int index) {
 	{
 	case 0:case 1:
 		return Qt::blue; break;
-	case 2:
+	case 8:
 		return Qt::darkYellow; break;
 	default:
 		return QColor(160, 32, 240); break;

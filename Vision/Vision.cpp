@@ -10,8 +10,9 @@ neighbour version means one of last few versions or current version
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 
 neighbour@
-version 1.32
-in project attribute->Qt Meta Object Complier->moc->prepend include, set nothing(remove stdfax.h);
+version 1.32+
+1.in project attribute->Qt Meta Object Complier->moc->prepend include, set nothing(remove stdfax.h);
+2.About info updated;
 */
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -128,7 +129,7 @@ void Vision::About() {
 		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\
                                                     \n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\
                                                     \n@Document: 杨天舒\
-                                                    \n@Version: 1.1")
+                                                    \n@Version: 1.32")
 		, QMessageBox::Ok);
 	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭")); 
 	loadStyleSheet(msgBox, "msgBox.qss");
