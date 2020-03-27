@@ -10,20 +10,8 @@ neighbour version means one of last few versions or current version
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 
 neighbour@
-version 1.11 forward to 1.3
-1.add .qss into .qrc, use QPath replace with CPath;
-2.remove stdafx.h & .cpp
-3.move QStringList : keys into new head file global.h
-4.restruct data of ToolKit, only remain QPoint:pressPoint &	QListWidgetItem* :toolPressed, besides,convert enum:toolType to QStringList:toolKeys;
-5.polish several toolPics, setIconSize dispalyed in toolKit;
-6.add dropEvent in smartedit;
-7.add key "if_else";
-8.add QStringList smarts to suit dataStructure of toolKit&smartEdit;
-9.add func getToolKeyColor to make tools text colorful;
-10.add func loadStyleSheet to make load_qss code easier for programmer;
-11.add global.h and global.cpp, move keys, toolKeys, smarts, func loadStyleSheet() declare into .h and achieve the func in .cpp;
-12.add QStringList:toolSmarts into global.h and func smartDrop() into SmartEdit, use index as medium signal, make drop from toolKit to smartEdit more intelligent;
-13.add QStringList:undefined in global.h to support type or text to be determined, which are displayed as selected text and make completion smart futhur;
+version 1.31
+delete stdafx files forever;
 */
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
