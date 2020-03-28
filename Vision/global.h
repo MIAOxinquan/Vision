@@ -53,8 +53,8 @@ const QStringList toolSmarts = {
 const QStringList undefined = {
 	"Name"/*0, for class, struct*/
 	,"Statement"/*1, for if*2, for, while, do*/
-	,"Input"/*2, for switch*/
-	,"Type"/*3, for func*/
+	,"Input"/*2, specail for switch*/
+	,"Type "/*3, special for func*/
 };
 /*º”‘ÿQSS*/
 void  loadStyleSheet(QWidget* ptr, QString fullFileName);

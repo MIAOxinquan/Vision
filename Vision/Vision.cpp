@@ -10,10 +10,17 @@ neighbour version means one of last few versions or current version
 ,so as neighbour version can be 1.0, 1.01 or 1.02 
 
 neighbour@
-version 1.32+
-1.in project attribute->Qt Meta Object Complier->moc->prepend include, set nothing(remove stdfax.h);
-2.About info updated;
+version 1.33 forward to 1.4 (no.6,7 to be fixed
+1.project crash ocurrs;
+2.CPU occupied 15%-18% on i7Core, caused by improper operation(rowContentPlot->update in an over high frequency func) in paintEvent, 
+  solved by place it to a lower frequency func, result in just no more than 3%;
+3.fixed bug that func supplement "Type" insert wrong place;
+4.optimize func smartDrop() & smartComplete();
+5.add const QString:version;
+6.annotation highlight in green;
+7.highlightblock displayed improper when a string contains repeat keys;
 */
+const QString version = "1.4";
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
 	, timer(new QTimer(this))
@@ -129,7 +136,7 @@ void Vision::About() {
 		, QString::fromLocal8Bit("\nVision开发团队:\n<Students  &WHU>\
                                                     \n@Code: 王浩旭 / 邹鑫 / 司若愚 / 杨肇欣 / 彭中园\
                                                     \n@Document: 杨天舒\
-                                                    \n@Version: 1.32")
+                                                    \n@Version: ") + version
 		, QMessageBox::Ok);
 	msgBox->button(QMessageBox::Ok)->setText(QString::fromLocal8Bit("关闭")); 
 	loadStyleSheet(msgBox, "msgBox.qss");

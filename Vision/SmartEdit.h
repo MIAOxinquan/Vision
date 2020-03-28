@@ -45,6 +45,7 @@ private:
 private slots:
 	void rowContentPlot();//单行文本块绘画
 	void smartComplete(const QString& key);//智能补全关键字
+	void update(const QRect& rect, int dy);//刷新
 };
 
 /*

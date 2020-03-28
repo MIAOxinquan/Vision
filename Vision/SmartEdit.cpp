@@ -51,6 +51,7 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	//槽函数
 	connect(keysCompleter, SIGNAL(activated(QString)), this, SLOT(smartComplete(QString)));
 	connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(rowContentPlot()));
+	connect(this, SIGNAL(updateRequest(QRect, int)), this, SLOT(update(QRect, int)));
 }
 SmartEdit::~SmartEdit() {
 	delete keysCompleter;	keysCompleter = Q_NULLPTR;
@@ -138,6 +139,10 @@ void SmartEdit::keyReleaseEvent(QKeyEvent* event) {
 	QPlainTextEdit::keyReleaseEvent(event);
 }
 /*释放事件*/
+/*
+drag = mousePress+mouseMove
+drop=mouseMove+mouseRelease
+*/
 void SmartEdit::dropEvent(QDropEvent* event) {
 	setFocus();
 	QPlainTextEdit::dropEvent(event);
@@ -151,79 +156,119 @@ void SmartEdit::dropEvent(QDropEvent* event) {
 /*拖拽自动补全*/
 void SmartEdit::smartDrop(int index) {
 	/*先移动光标*/
+	int moveIndex = 0, moveLength = 0;
+	QString undefinedKey;
 	switch (index)
 	{
 	case 0:case 1:/*class, struct*/
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		break;
 	case 2:case 4:case 6:/*if, switch, while*/
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
 		break;
 	case 3:/*if_else*/
-		for (int i = 0; i < 7; i++) {
+		while (moveIndex < 7) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
 		break;
 	case 5:/*for*/
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
+		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
 		break;
 	case 7:/*do(while)*/
 		moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor); break;
-	case 8:
-		for (int i = 0; i < 3; i++) {
+	case 8:/*func*/
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
-		moveCursor(QTextCursor::StartOfLine, QTextCursor::MoveAnchor);
+		moveIndex = 0;
+		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
+		while (moveIndex < 6) {
+			moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+			moveIndex++;
+		}
 		break;
-	default:	break;
+	default: break;
 	}
+	moveIndex = 0;
 	/*
 	再填充待定文本
-	做完移动或插入文本后要更新光标
+	做完移动要更新光标副本
 	*/
 	curTextCursor = textCursor();
 	switch (index)
 	{
-	case 0:case 1:
-		curTextCursor.insertText(" " + undefined.at(0));
-		for (int i = 0; i < undefined.at(0).length(); i++) {
+	case 0:case 1:/*class, struct*/
+		undefinedKey = undefined.at(0);
+		moveLength = undefinedKey.length();
+		curTextCursor.insertText(" " + undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
-	case 2:case 3:case 5:case 6:case 7:
-		curTextCursor.insertText(undefined.at(1));
-		for (int i = 0; i < undefined.at(1).length(); i++) {
+	case 2:case 3:case 5:case 6:case 7:/*if,if_else,for,while,do*/
+		undefinedKey = undefined.at(1);
+		moveLength = undefinedKey.length();
+		curTextCursor.insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
-	case 4:
-		curTextCursor.insertText(undefined.at(2));
-		for (int i = 0; i < undefined.at(2).length(); i++) {
+	case 4:/*switch*/
+		undefinedKey = undefined.at(2);
+		moveLength = undefinedKey.length();
+		curTextCursor.insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
-	case 8:
-		curTextCursor.insertText(undefined.at(3) + " ");
-		for (int i = 0; i <= undefined.at(3).length(); i++) {
+	case 8:/*func*/
+		undefinedKey = undefined.at(3);
+		moveLength = undefinedKey.length();
+		if (0 == curTextCursor.position()) {
+			curTextCursor.insertText(undefinedKey);
+		} 
+		else {
+			curTextCursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, 1);
+			QString selectedChar = curTextCursor.selectedText();
+			curTextCursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 1);
+			if (" " == selectedChar || QString(0x422029) == selectedChar) {
+				curTextCursor.insertText(undefinedKey);
+			}
+			else {
+				curTextCursor.insertText(" " + undefinedKey);
+			}
+		}
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
-	default:	break;
+	default: break;
 	}
 }
 /*行号块宽*/
@@ -251,7 +296,7 @@ void SmartEdit::rowNumPlot(QPaintEvent* event) {
 		if (block.isVisible() && bottom >= event->rect().top()) {
 			QString num = QString::number(blockNumber + 1);
 			painter.drawText(0, top, rowNumArea->width() - 3, height, Qt::AlignRight, num);
-			rowNumArea->update();//每次绘制字体后刷新
+			//rowNumArea->update();//每次绘制字体后刷新,过于消耗CPU
 		}
 		block = block.next();
 		top = bottom;
@@ -275,6 +320,14 @@ void SmartEdit::rowContentPlot(/*int*/) {
 		setExtraSelections(extraSelections);
 	}
 }
+/*
+刷新界面，只和updateRequest关联相比paintEvent大大降低cpu消耗
+*/
+void SmartEdit::update(const QRect& rect, int dy) {
+	if (dy) rowNumArea->scroll(0, dy);
+	else  rowNumArea->update(0, rect.y(), rowNumArea->width(), rect.height());
+	if (rect.contains(viewport()->rect())) setViewportMargins(getRowNumWidth() - 3, -1, -3, 0);
+}
 /*获取前缀：光标处至上一个空格之间的字符串*/
 QString SmartEdit::getPrefix() const {
 	QString selectedText;
@@ -285,7 +338,7 @@ QString SmartEdit::getPrefix() const {
 	QTextCursor curTextCursor = textCursor();
 	while (curTextCursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, 1)) {
 		selectedText = curTextCursor.selectedText();//只要不遇到空格或者换行符，就获取选择文本
-		if (selectedText.startsWith(QString(" ")) || selectedText.startsWith(QChar(0x422029))) {
+		if (selectedText.startsWith(' ') || selectedText.startsWith(QChar(0x422029))) {
 			break;//左移至出现空格或者换行符时终止
 		}
 	}
@@ -299,7 +352,8 @@ QString SmartEdit::getPrefix() const {
 }
 /*智能补全*/
 void SmartEdit::smartComplete(const QString& key) {
-	QString curPrefix = getPrefix(), supplement = key;
+	QString curPrefix = getPrefix(), supplement = key, undefinedKey;
+	int moveIndex = 0, moveLength = 0;
 	curTextCursor = textCursor();
 	//不需要判断界限，因为参数一定是key
 	int index = keys.indexOf(key);
@@ -322,70 +376,100 @@ void SmartEdit::smartComplete(const QString& key) {
 		curTextCursor.insertText("; "); break;
 	case 6:case 7:/*class, struct*/
 		curTextCursor.insertText(smarts.at(0));
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
+		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		textCursor().insertText(" " + undefined.at(0));
-		for (int i = 0; i < undefined.at(0).length(); i++) {
+		undefinedKey = undefined.at(0);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(" " + undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	case 15:case 16:/*if, while*/
 		curTextCursor.insertText(smarts.at(1));
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
-		textCursor().insertText(undefined.at(1));
-		for (int i = 0; i < undefined.at(1).length(); i++) {
+		undefinedKey = undefined.at(1);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	case 17:/*for*/
 		curTextCursor.insertText(smarts.at(2));
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
+		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
-		textCursor().insertText(undefined.at(1));
-		for (int i = 0; i < undefined.at(1).length(); i++) {
+		moveIndex = 0;
+		undefinedKey = undefined.at(1);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	case 18:/*do(while)*/
 		curTextCursor.insertText(smarts.at(3));
 		moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
-		textCursor().insertText(undefined.at(1));
-		for (int i = 0; i < undefined.at(1).length(); i++) {
+		undefinedKey = undefined.at(1);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	case 19:/*if_else*/
-		for (int i = 0; i < 5; i++) {
+		while (moveIndex < 5) {
 			curTextCursor.deletePreviousChar();
+			moveIndex++;
 		}
+		moveIndex = 0;
 		curTextCursor.insertText(smarts.at(4));
-		for (int i = 0; i < 7; i++) {
+		while (moveIndex < 7) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
+		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
-		textCursor().insertText(undefined.at(1));
-		for (int i = 0; i < undefined.at(1).length(); i++) {
+		undefinedKey = undefined.at(1);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	case 20:/*switch*/
 		curTextCursor.insertText(smarts.at(5));
-		for (int i = 0; i < 3; i++) {
+		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
+			moveIndex++;
 		}
+		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
 		moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
-		textCursor().insertText(undefined.at(2));
-		for (int i = 0; i < undefined.at(2).length(); i++) {
+		undefinedKey = undefined.at(2);
+		moveLength = undefinedKey.length();
+		textCursor().insertText(undefinedKey);
+		while (moveIndex < moveLength) {
 			moveCursor(QTextCursor::Left, QTextCursor::KeepAnchor);
+			moveIndex++;
 		}
 		break;
 	}
