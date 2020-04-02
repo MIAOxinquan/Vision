@@ -19,12 +19,14 @@
         <file>Resources/icon/Delete.png</file>
         <file>Resources/icon/class.png</file>
         <file>Resources/icon/do_while.png</file>
+        <file>Resources/icon/enum.png</file>
         <file>Resources/icon/for.png</file>
         <file>Resources/icon/func.png</file>
         <file>Resources/icon/if.png</file>
         <file>Resources/icon/if_else.png</file>
         <file>Resources/icon/struct.png</file>
         <file>Resources/icon/switch.png</file>
+        <file>Resources/icon/union.png</file>
         <file>Resources/icon/while.png</file>
         <file>Resources/qss/completer.qss</file>
         <file>Resources/qss/global.qss</file>

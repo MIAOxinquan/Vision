@@ -1,9 +1,24 @@
 #include "PlotPad.h"
 
-PlotPad::PlotPad(QTabWidget* parent)
-	:QWidget(parent) {
-	setAcceptDrops(true);
+PlotItem::PlotItem(QGraphicsScene*par) {
+	parent();
+}/*
+PlotItem::PlotItem(PlotItem* parent) {
 
+}*/
+PlotItem::~PlotItem() {
+
+}
+
+
+PlotPad::PlotPad(QTabWidget* parent)
+	:QWidget(parent)
+	, plotView(new QGraphicsView(this))
+	, plotScene(new QGraphicsScene(plotView))
+	//, item(new PlotItem(plotScene))
+{
+	setAcceptDrops(true);
+	plotView->setMinimumSize(400, 600);
 }
 
 PlotPad::~PlotPad() {
@@ -18,6 +33,11 @@ void PlotPad::dropEvent(QDropEvent* event)
 	QString dbugStr = QString("dropEvent At (%1,%2),data: %3").arg(p.x()).arg(p.y()).arg(str);
 	qDebug() << dbugStr;
 	QWidget::dropEvent(event);
+	QGraphicsTextItem* item = new QGraphicsTextItem();
+	item->setPlainText(dbugStr);
+	plotScene->clear();
+	plotScene->addItem(item);
+	plotView->viewport()->update();
 }
 
 //Vision* PlotPad::getVision()

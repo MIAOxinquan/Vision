@@ -4,36 +4,40 @@
 #include "PlotPad.h"
 #include "SmartEdit.h"
 /*
-neighbour version means one of last few versions or current version
-,for example versions 1.0, 1.01, 1.02 are regarded as neighbours
-,if current version is 1.02
-,so as neighbour version can be 1.0, 1.01 or 1.02 
+neighbour version means one of several lastest versions
+for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if current version is 1.02
+,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 1.33 forward to 1.4 (no.6,7 to be fixed
-1.project crash ocurrs;
-2.CPU occupied 15%-18% on i7Core, caused by improper operation(rowContentPlot->update in an over high frequency func) in paintEvent, 
-  solved by place it to a lower frequency func, result in just no more than 3%;
-3.fixed bug that func supplement "Type" insert wrong place;
-4.optimize func smartDrop() & smartComplete();
-5.add const QString:version;
-6.annotation highlight in green;
-7.highlightblock displayed improper when a string contains repeat keys;
+version 1.47
+1.start constructing PlotPad;
+2.support highlightRegExp singleLineComment  in darkGreen, quotation and character in brown;
+3.cancel smartEdit rightButton menu;
+4.add menu Setting, within menu PlotPattern and menu Language;
+5.restruct C++ keys_cpp with a lot new items;
+6.make multilinesComment highlight in darkGreen;
+7.highlightblock displayed normal when a string contains repeated keys;
+8.escape character not supported;
+9.support two patterns, you can choose to show plotpad or not;
+10.support two languages, you can choose C++ or Java;
 */
-const QString version = "1.4";
+const QString version = "1.47";
+
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
-	, timer(new QTimer(this))
-	, curDateTimeLabel(new QLabel())
 	, globalSplitter(new QSplitter(Qt::Horizontal, this))
 	, toolKit(new ToolKit(globalSplitter))
 	, plotTab(new QTabWidget(globalSplitter))
 	, editTab(new QTabWidget(globalSplitter))
+	, curDateTimeLabel(new QLabel())
+	, timer(new QTimer(this))
 {
 	//初始化
 	init();
 	//启动计时器
 	timer->start(1000);
+	showCurDateTime();
+	statusBar()->showMessage("initailizition finished!", 5000);
 	//槽函数
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
 	connect(visionUi.actionUndo, SIGNAL(triggered()), this, SLOT(Undo()));
@@ -52,6 +56,11 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionClose, SIGNAL(triggered()), this, SLOT(Close()));
 	connect(visionUi.actionQuit, SIGNAL(triggered()), this, SLOT(Quit()));
 	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(About()));
+	connect(visionUi.actionDefault, SIGNAL(triggered()), this, SLOT(Default()));
+	connect(visionUi.actionNoPlot, SIGNAL(triggered()), this, SLOT(NoPlot()));
+	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(Cpp()));
+	connect(visionUi.actionJava, SIGNAL(triggered()), this, SLOT(Java()));
+
 
 }
 Vision::~Vision() {
@@ -66,12 +75,23 @@ Vision::~Vision() {
 }
 /*初始化*/
 void Vision::init() {
+	//全局窗口
+	setMinimumSize(900, 600);
 	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
 	//自定义中间区：工具框、图形区、代码框
 	toolKit->setMinimumWidth(60);
 	toolKit->setMaximumWidth(200);
 	plotTab->setMinimumWidth(200);
 	editTab->setMinimumWidth(200);
+	//自定义下区：状态栏、时间标签
+	curDateTimeLabel->setAlignment(Qt::AlignRight);
+	statusBar()->addPermanentWidget(curDateTimeLabel);
+	//变量初始化
+	PlotPad* pad = new PlotPad();
+	plotTab->addTab(pad, "plotPad");
+	SmartEdit* edit = new SmartEdit();
+	editTab->addTab(edit, "smartEdit");
+
 	/*
 	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
 	例如以下1号元素与2号元素宽度比为3：1
@@ -79,19 +99,7 @@ void Vision::init() {
 	for (int i = 0; i < 3; i++) {
 		globalSplitter->setStretchFactor(i, 1);
 	}
-	//自定义下区：状态栏、时间标签
-	statusBar()->showMessage("initailizition finished!", 5000);
-	curDateTimeLabel->setAlignment(Qt::AlignRight);
-	statusBar()->addPermanentWidget(curDateTimeLabel);
-	showCurDateTime();
-	//全局窗口
-	setCentralWidget(globalSplitter);
-	setMinimumSize(900, 600);
-	//变量初始化
-	PlotPad* pad = new PlotPad();
-	plotTab->addTab(pad, "plotPad");
-	SmartEdit* edit = new SmartEdit();
-	editTab->addTab(edit, "smartEdit");
+	setCentralWidget(globalSplitter);//放在布局最后
 	//加载qss
 	loadStyleSheet(this, "global.qss");
 }
@@ -127,6 +135,22 @@ int Vision::Quit() {
 /*窗口按钮退出*/
 void Vision::closeEvent(QCloseEvent* event) {
 	if (QMessageBox::Cancel == Quit())event->ignore();
+}
+/*默认模式*/
+void Vision::Default() {
+	globalSplitter->widget(1)->show();
+}
+/*无图模式*/
+void Vision::NoPlot() {
+	globalSplitter->widget(1)->close();
+}
+/*C++*/
+void Vision::Cpp() {
+
+}
+/*Java*/
+void Vision::Java() {
+
 }
 /*关于*/
 void Vision::About() {

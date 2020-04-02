@@ -43,6 +43,10 @@ private slots:
 	void SaveAs();
 	void Close();
 	void About();
+	void Default();
+	void NoPlot();
+	void Cpp();
+	void Java();
 	void showCurDateTime();
 	void getCode();
 	int Quit();

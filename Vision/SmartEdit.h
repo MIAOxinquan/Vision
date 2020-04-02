@@ -9,9 +9,10 @@ class SyntaxLit : public QSyntaxHighlighter {
 	Q_OBJECT
 public:
 	SyntaxLit(QTextDocument* document = Q_NULLPTR);
-	QColor getKeyColor(QString key);
 protected:	void highlightBlock(const QString& rowText);
-private:		QRegularExpression keysRegExp;
+private:		
+	QList<QRegularExpression>lits;// lit_blue, lit_purple, lit_quotes, lit_sigCmt;
+	QRegExp lit_mulCmtStart, lit_mulCmtEnd;
 };
 
 class SmartEdit: public QPlainTextEdit {
