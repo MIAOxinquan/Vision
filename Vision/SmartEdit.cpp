@@ -23,8 +23,8 @@ SyntaxLit::SyntaxLit(QTextDocument* document)
 	}
 	for each (const QString key in (keys_cpp_purple + keys_cpp_blue)) {
 		if ("signed" == key) {
-			keysPattern.append("\\w+[a-mo-zA-Z0-9_]" + key + "|" + key + "\\w+|");
-			keysPattern.append("\\w+[a-tv-zA-Z0-9_]n" + key + "|" + key + "\\w+|");
+			keysPattern.append("\\w*[a-mo-zA-Z0-9_]" + key + "|" + key + "\\w+|");
+			keysPattern.append("\\w*[a-tv-zA-Z0-9_]n" + key + "|" + key + "\\w+|");
 		}
 		else {
 			keysPattern.append("\\w+" + key + "|" + key + "\\w+|");
@@ -447,14 +447,14 @@ void SmartEdit::smartCore(QString key) {
 	}
 	moveIndex = 0; moveStep = 0;
 	if ("func" == key) {/*func*/
-		curTextCursor.insertText(smarts.at(1));
+		curTextCursor.insertText(smarts.at(0) + smarts.at(1));
 		while (moveIndex < 3) {
 			moveCursor(QTextCursor::Up, QTextCursor::MoveAnchor);
 			moveIndex++;
 		}
 		moveIndex = 0;
 		moveCursor(QTextCursor::EndOfLine, QTextCursor::MoveAnchor);
-		while (moveIndex < 4) {
+		while (moveIndex < 6) {
 			moveCursor(QTextCursor::Left, QTextCursor::MoveAnchor);
 			moveIndex++;
 		}

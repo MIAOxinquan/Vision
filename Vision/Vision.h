@@ -26,6 +26,10 @@ private:
 	ToolKit* toolKit;
 	QTabWidget* plotTab, * editTab;
 	QTimer* timer;
+	QStringList filePaths;//已打开文件路径
+	QStringList fileNames;//已打开文件
+	QList<PlotPad*>* plots;//plot指针列表
+	QList<SmartEdit*>* edits;//edit指针列表
 
 private slots:
 	//大写是为避免和qt自带函数重名

@@ -233,6 +233,9 @@
    </property>
   </action>
   <action name="actionSave">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Save" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Save.png</normaloff>:/Resources/icon/Save.png</iconset>
@@ -254,6 +257,9 @@
    </property>
   </action>
   <action name="actionSaveAll">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="SaveAll" resource="Vision.qrc">
      <normaloff>:/Resources/icon/SaveAll.png</normaloff>:/Resources/icon/SaveAll.png</iconset>
@@ -272,6 +278,9 @@
    </property>
   </action>
   <action name="actionSaveAs">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="SaveAs" resource="Vision.qrc">
      <normaloff>:/Resources/icon/SaveAs.png</normaloff>:/Resources/icon/SaveAs.png</iconset>
@@ -290,6 +299,9 @@
    </property>
   </action>
   <action name="actionClose">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Close" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Close.png</normaloff>:/Resources/icon/Close.png</iconset>
@@ -326,6 +338,9 @@
    </property>
   </action>
   <action name="actionUndo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Undo" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Undo.png</normaloff>:/Resources/icon/Undo.png</iconset>
@@ -344,6 +359,9 @@
    </property>
   </action>
   <action name="actionRedo">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Redo" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Redo.png</normaloff>:/Resources/icon/Redo.png</iconset>
@@ -362,6 +380,9 @@
    </property>
   </action>
   <action name="actionCopy">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Copy" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Copy.png</normaloff>:/Resources/icon/Copy.png</iconset>
@@ -380,6 +401,9 @@
    </property>
   </action>
   <action name="actionPaste">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Paste" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Paste.png</normaloff>:/Resources/icon/Paste.png</iconset>
@@ -398,6 +422,9 @@
    </property>
   </action>
   <action name="actionCut">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Cut" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Cut.png</normaloff>:/Resources/icon/Cut.png</iconset>
@@ -491,6 +518,9 @@
    </property>
   </action>
   <action name="actionDelete">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Delete" resource="Vision.qrc">
      <normaloff>:/Resources/icon/Delete.png</normaloff>:/Resources/icon/Delete.png</iconset>
@@ -510,7 +540,8 @@
   </action>
   <action name="actionDefault">
    <property name="icon">
-    <iconset theme="Default"/>
+    <iconset theme="Default">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>默认</string>
@@ -527,7 +558,8 @@
   </action>
   <action name="actionNoPlot">
    <property name="icon">
-    <iconset theme="NoPlot"/>
+    <iconset theme="NoPlot">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>无图</string>
@@ -544,7 +576,8 @@
   </action>
   <action name="actionCpp">
    <property name="icon">
-    <iconset theme="C++"/>
+    <iconset theme="C++">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>C++</string>
@@ -561,7 +594,8 @@
   </action>
   <action name="actionJava">
    <property name="icon">
-    <iconset theme="Java"/>
+    <iconset theme="Java">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Java</string>

@@ -1,5 +1,7 @@
 #include <QtCore>
 #include <QtWidgets>
+//默认路径
+#define DEFAULT_PATH ".//product"
 /*文本框高亮语法*/
 const QList < QColor > colors = {
 	QColor(160, 32, 240)
