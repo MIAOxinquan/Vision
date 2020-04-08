@@ -9,19 +9,17 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 1.47
-1.start constructing PlotPad;
-2.support highlightRegExp singleLineComment  in darkGreen, quotation and character in brown;
-3.cancel smartEdit rightButton menu;
-4.add menu Setting, within menu PlotPattern and menu Language;
-5.restruct C++ keys_cpp with a lot new items;
-6.make multilinesComment highlight in darkGreen;
-7.highlightblock displayed normal when a string contains repeated keys;
+version 1.50
+1.add try_catch in keys_cpp and make it smart;
+2.add try_catch in toolKeys and make it smart;
+3.add func smartCore() to support func smartComplete() & func dropEvent() in the meanwhile, remove func smartDrop() and QStringList: toolSmarts;
+4.fix more repeated keys' wrong displayed highlightblock;
+
 8.escape character not supported;
 9.support two patterns, you can choose to show plotpad or not;
 10.support two languages, you can choose C++ or Java;
 */
-const QString version = "1.47";
+const QString version = "1.50";
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)

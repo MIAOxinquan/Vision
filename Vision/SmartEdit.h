@@ -41,7 +41,7 @@ private:
 	SyntaxLit* syntaxLit;
 	/*函数*/
 	QString getPrefix() const;
-	void smartDrop(int index);
+	void smartCore(QString key);
 	
 private slots:
 	void rowContentPlot();//单行文本块绘画

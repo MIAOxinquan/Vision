@@ -26,6 +26,7 @@
         <file>Resources/icon/if_else.png</file>
         <file>Resources/icon/struct.png</file>
         <file>Resources/icon/switch.png</file>
+        <file>Resources/icon/try_catch.png</file>
         <file>Resources/icon/union.png</file>
         <file>Resources/icon/while.png</file>
         <file>Resources/qss/completer.qss</file>

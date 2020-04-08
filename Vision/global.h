@@ -33,16 +33,7 @@ const QStringList keys_cpp_purple = {
 	,"goto"/*14, goto*/
 };
 const QStringList keys_cpp_normal = {
-	"if_else","do_while"/*0,1, complex conditions*/
-};
-/*文本框智能补充字段*/
-const QStringList smarts = {
-	"()"/*0,  sizeof if while catch*/
-	,"\n{\n\n}"/*1, enum union struct class do try*/
-	,"(;;)\n{\n\n}"/*2,  for*/
-	,"()\n{\ndefault:break;\n}"/*3, switch*/
-	,"()\n{\n\n}\nelse\n{\n\n}"/*4, if_else*/
-	,"\n{\n\n}while();"/*5, do_while*/
+	"if_else","do_while","try_catch"/*0,1,2, complex conditions*/
 };
 /*工具框关键字*/
 const QStringList toolKeys = {
@@ -54,21 +45,18 @@ const QStringList toolKeys = {
 	,"for"/*7, for(;;)\n{\n\n}*/
 	,"while"/*8, while()\n{\n\n}*/
 	,"do_while"/*9, do\n{\n\n}while();*/
+	,"try_catch"/*10, try\n{\n\n}*/
 	,"func"/*10, func()\n{\n\n}*/
 };
-/*工具框全字段*/
-const QStringList toolSmarts = {
-	"enum\n{\n\n};"
-	,"union\n{\n\n};"
-	,"struct\n{\n\n};"
-	,"class\n{\n\n};"
-	,"if()\n{\n\n}"
-	,"if()\n{\n\n}\nelse\n{\n\n}"
-	,"switch()\n{\ndefault:break;\n}"
-	,"for(;;)\n{\n\n}"
-	,"while()\n{\n\n}"
-	,"do\n{\n\n}while();"
-	,"func()\n{\n\n}"
+/*文本框智能补充字段*/
+const QStringList smarts = {
+	"()"/*0,  sizeof if while catch*/
+	,"\n{\n\n}"/*1, enum union struct class do try func*/
+	,"(;;)\n{\n\n}"/*2,  for*/
+	,"()\n{\ndefault:break;\n}"/*3, switch*/
+	,"()\n{\n\n}\nelse\n{\n\n}"/*4, if_else*/
+	,"\n{\n\n}while();"/*5, do_while*/
+	,"\n{\n\n}\ncatch()\n{\nthrow;\n}"/*6, try_catch*/
 };
 const QStringList undefined = {
 	"Name"/*0, for class, struct*/

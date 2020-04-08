@@ -17,7 +17,6 @@ protected:
 	void mouseMoveEvent(QMouseEvent* e)override;
 
 private:
-	QString indexOfToolPressed;
 	QPoint pressPoint;
 	QListWidgetItem* toolPressed;
 };
