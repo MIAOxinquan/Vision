@@ -23,8 +23,16 @@ SyntaxLit::SyntaxLit(QTextDocument* document)
 	}
 	for each (const QString key in (keys_cpp_purple + keys_cpp_blue)) {
 		if ("signed" == key) {
-			keysPattern.append("\\w*[a-mo-zA-Z0-9_]" + key + "|" + key + "\\w+|");
-			keysPattern.append("\\w*[a-tv-zA-Z0-9_]n" + key + "|" + key + "\\w+|");
+			keysPattern.append("\\w*[a-mo-zA-Z0-9_]" + key + "|"
+				+ "\\w*[a-tv-zA-Z0-9_]n" + key + "|"
+				+ key + "\\w+|");
+		}
+		else if ("do"==key) {
+			keysPattern.append("\\w+" + key + "|"
+				+ key + "[a-tv-zA-Z0-9_]\\w*|"
+				+ key + "u[ac-zA-Z0-9_]\\w*|"
+				+ key + "ub[a-km-zA-Z0-9_]\\w*|"
+				+ key + "ubl[a-df-zA-Z0-9_]\\w*|");
 		}
 		else {
 			keysPattern.append("\\w+" + key + "|" + key + "\\w+|");

@@ -9,19 +9,20 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 1.56
-1.define DEFAULT_PATH ".//product" for universal use;
-2.add QList plots & edits for temp;
-3.icon buttons' enable-logic basically figured;
-4.funcs getCode(), New(), Open(), Save(), SaveAll(), Close() building;
-5.key smart fixed, "func" lost "()" in its smart;
-6.highlight block repeat-key cases can be shown more properly;
+version 1.57 forward to 2.03
+1.key "do" & "double" hignlight case paradox figured;
+2*.PlotPad basically built;
+3.crash caused by drag from  toolKit's blank area fixed;
+4.dragitem's text Incorrectly shown fixed;
+5.PlotItem's std::string str change to QString head,and add QString content into it;
 
+*.code will synchronize with plot item;
+*.drawing lines between plotitems occupies  CPU a lot;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "1.56";
+const QString version = "2.03";
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -62,7 +63,6 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionNoPlot, SIGNAL(triggered()), this, SLOT(NoPlot()));
 	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(Cpp()));
 	connect(visionUi.actionJava, SIGNAL(triggered()), this, SLOT(Java()));
-
 
 }
 Vision::~Vision() {
@@ -204,8 +204,9 @@ void Vision::getCode() {
 }
 /*新建文件*/
 void Vision::New() {
-	QString defaultName = "#untitled@" + QString::number(plotTab->count());
-	PlotPad* newPad = new PlotPad();
+	QString defaultName = "#untitled@" + QString::number(plotTab->count()); 
+	QGraphicsScene* scene = new QGraphicsScene;
+	PlotPad* newPad = new PlotPad(scene);
 	plots->append(newPad);
 	plotTab->addTab(newPad, defaultName);
 	plotTab->setCurrentIndex(plotTab->count() - 1);

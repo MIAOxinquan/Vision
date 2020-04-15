@@ -65,18 +65,18 @@ void ToolKit::mouseReleaseEvent(QMouseEvent* event)
 
 void ToolKit::mouseMoveEvent(QMouseEvent* event)
 {
-	if (event->buttons() & Qt::LeftButton)//确保按住左键移动.
+	if (event->buttons() & Qt::LeftButton&& toolPressed)//确保按住左键移动.
 	{
 		QPoint curPoint = event->pos() - pressPoint;
 		//只有这个长度大于默认的距离,才会被系统认为是形成拖拽的操作.
 		if (curPoint.manhattanLength() >= QApplication::startDragDistance()) {
-			QDrag* drag = new QDrag(this);
-			drag->setPixmap(toolPressed->icon().pixmap(120,60));//设置拖拽时的图标
+				QDrag* drag = new QDrag(this);
+				drag->setPixmap(toolPressed->icon().pixmap(120, 60));//设置拖拽时的图标
 
-			QMimeData* mimeData = new QMimeData();//拖拽产生的临时数据
-			mimeData->setText(toolPressed->text());//如果文本为空，则代码框默认接收不到任何信息，显示为禁止标志
-			drag->setMimeData(mimeData);
-			auto action = drag->exec(Qt::CopyAction | Qt::MoveAction);
+				QMimeData* mimeData = new QMimeData();//拖拽产生的临时数据
+				mimeData->setText(toolPressed->text());//如果文本为空，则代码框默认接收不到任何信息，显示为禁止标志
+				drag->setMimeData(mimeData);
+				auto action = drag->exec(Qt::CopyAction | Qt::MoveAction);
 		}
 	}
 	QListWidget::mouseMoveEvent(event);
