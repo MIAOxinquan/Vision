@@ -541,7 +541,7 @@
   <action name="actionDefault">
    <property name="icon">
     <iconset theme="Default">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>Resources/icon/Default.png</normaloff>Resources/icon/Default.png</iconset>
    </property>
    <property name="text">
     <string>默认</string>
@@ -559,7 +559,7 @@
   <action name="actionNoPlot">
    <property name="icon">
     <iconset theme="NoPlot">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>Resources/icon/NoPlot.png</normaloff>Resources/icon/NoPlot.png</iconset>
    </property>
    <property name="text">
     <string>无图</string>
@@ -577,7 +577,7 @@
   <action name="actionCpp">
    <property name="icon">
     <iconset theme="C++">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>Resources/icon/Cpp.png</normaloff>Resources/icon/Cpp.png</iconset>
    </property>
    <property name="text">
     <string>C++</string>
@@ -595,7 +595,7 @@
   <action name="actionJava">
    <property name="icon">
     <iconset theme="Java">
-     <normaloff>.</normaloff>.</iconset>
+     <normaloff>Resources/icon/Java.png</normaloff>Resources/icon/Java.png</iconset>
    </property>
    <property name="text">
     <string>Java</string>

@@ -23,12 +23,14 @@ SyntaxLit::SyntaxLit(QTextDocument* document)
 	}
 	for each (const QString key in (keys_cpp_purple + keys_cpp_blue)) {
 		if ("signed" == key) {
-			keysPattern.append("\\w*[a-mo-zA-Z0-9_]" + key + "|"
+			keysPattern.append(
+				"\\w*[a-mo-zA-Z0-9_]" + key + "|"
 				+ "\\w*[a-tv-zA-Z0-9_]n" + key + "|"
 				+ key + "\\w+|");
 		}
 		else if ("do"==key) {
-			keysPattern.append("\\w+" + key + "|"
+			keysPattern.append(
+				"\\w+" + key + "|"
 				+ key + "[a-tv-zA-Z0-9_]\\w*|"
 				+ key + "u[ac-zA-Z0-9_]\\w*|"
 				+ key + "ub[a-km-zA-Z0-9_]\\w*|"
@@ -101,7 +103,20 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, rowNumArea(new RowNumArea(this))
 	, keysCompleter(Q_NULLPTR)
 {
-	init();//初始化
+	//this->setAcceptDrops(false);
+	setContextMenuPolicy(Qt::NoContextMenu);
+	setFont(QFont("微软雅黑", 12));
+	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
+	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
+	keysCompleter = new QCompleter(keys_cpp_blue + keys_cpp_purple + keys_cpp_normal);//不可改为new QCompleter(keys_cpp*, this)
+	keysCompleter->setWidget(this);
+	keysCompleter->setCaseSensitivity(Qt::CaseSensitive); //区分大小写
+	keysCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
+	keysCompleter->setMaxVisibleItems(8);
+	keysCompleter->popup()->setFont(QFont("微软雅黑", 12, QFont::Bold));
+	//加载qss
+	loadStyleSheet(this, "smart.qss");
+
 	rowContentPlot();//初始化刷新行号块
 	//槽函数
 	connect(keysCompleter, SIGNAL(activated(QString)), this, SLOT(smartComplete(QString)));
@@ -112,22 +127,6 @@ SmartEdit::~SmartEdit() {
 	delete keysCompleter;	keysCompleter = Q_NULLPTR;
 	delete syntaxLit; syntaxLit = Q_NULLPTR;
 	delete rowNumArea;	rowNumArea = Q_NULLPTR;
-}
-/*初始化*/
-void SmartEdit::init() {
-	//this->setAcceptDrops(false);
-	setContextMenuPolicy(Qt::NoContextMenu);
-	setFont(QFont("微软雅黑", 12));
-	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
-	rowNumArea->setFont(QFont("微软雅黑", 12, QFont::Bold));
-	keysCompleter = new QCompleter(keys_cpp_blue+keys_cpp_purple+keys_cpp_normal);//不可改为new QCompleter(keys_cpp*, this)
-	keysCompleter->setWidget(this);
-	keysCompleter->setCaseSensitivity(Qt::CaseSensitive); //区分大小写
-	keysCompleter->setCompletionMode(QCompleter::PopupCompletion);//匹配已输入内容,弹出
-	keysCompleter->setMaxVisibleItems(8);
-	keysCompleter->popup()->setFont(QFont("微软雅黑", 12, QFont::Bold));
-	//加载qss
-	loadStyleSheet(this, "smart.qss");
 }
 /*重写：刷新大小*/
 void SmartEdit::resizeEvent(QResizeEvent* event){

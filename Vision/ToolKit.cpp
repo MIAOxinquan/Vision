@@ -5,13 +5,6 @@ ToolKit::ToolKit(QSplitter* parent)
 	:QListWidget(parent)
 	, toolPressed(Q_NULLPTR)
 {
-	init();
-}
-ToolKit::~ToolKit() {
-	delete toolPressed; toolPressed = Q_NULLPTR;
-}
-/*初始化*/
-void ToolKit::init() {
 	//布局设置
 	setDragEnabled(true);
 	setFont(QFont("微软雅黑", 12, QFont::Bold));
@@ -28,6 +21,12 @@ void ToolKit::init() {
 	toolPressed = Q_NULLPTR;
 	//加载qss
 	loadStyleSheet(this, "tools.qss");
+}
+ToolKit::~ToolKit() {
+	if (toolPressed) {
+		delete toolPressed;
+		toolPressed = Q_NULLPTR;
+	}
 }
 /*词色转换*/
 QColor ToolKit::getToolKeyColor(int index) {

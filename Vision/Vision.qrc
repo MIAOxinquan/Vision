@@ -17,6 +17,10 @@
         <file>Resources/icon/Attritube.png</file>
         <file>Resources/icon/getCode.png</file>
         <file>Resources/icon/Delete.png</file>
+        <file>Resources/icon/Cpp.png</file>
+        <file>Resources/icon/Default.png</file>
+        <file>Resources/icon/Java.png</file>
+        <file>Resources/icon/NoPlot.png</file>
         <file>Resources/icon/class.png</file>
         <file>Resources/icon/do_while.png</file>
         <file>Resources/icon/enum.png</file>
@@ -34,5 +38,6 @@
         <file>Resources/qss/msgBox.qss</file>
         <file>Resources/qss/smart.qss</file>
         <file>Resources/qss/tools.qss</file>
+        <file>Resources/qss/plot.qss</file>
     </qresource>
 </RCC>

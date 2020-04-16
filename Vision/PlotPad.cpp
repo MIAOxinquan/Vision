@@ -1,27 +1,34 @@
 #include "global.h"
 #include "PlotPad.h"
 
-PlotPad::PlotPad(QGraphicsScene* scene) : QGraphicsView() {
+PlotPad::PlotPad(QGraphicsScene* scene)
+	: QGraphicsView()
+	, scene(Q_NULLPTR)
+	, lastLine(Q_NULLPTR)
+{
 	this->scene = scene;
-	//scene->addRect(0, 0, 1000, 1000);
-	//scene->addRect(-this->width() / 2, -this->height() / 2, this->width(), this->height());
-	
 	this->QGraphicsView::setScene(scene);
-	this->setSceneRect(0, 0, 2000, 2000);
+	this->setSceneRect(0, 0, 1920, 1600);
 	setAcceptDrops(true);
 	startPoint = QPoint(100, 100);
 	endPoint = QPoint(200, 200);
-
-	vBar = this->verticalScrollBar();
-	hBar = this->horizontalScrollBar();
 
 
 	//去掉滚动条
 	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	loadStyleSheet(this, "plot.qss");
 }
 
-void PlotPad::drawItems(PlotItem* it) {
+//PlotPad::~PlotPad() {
+//	if (lastLine) {
+//		delete lastLine;
+//		lastLine = Q_NULLPTR;
+//	}
+//	/*禁止delete scene*/
+//}
+
+void PlotPad::drawItems(Block* it) {
 	it->setAcceptDrops(true);
 	it->setFlags(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable
 		| QGraphicsItem::GraphicsItemFlag::ItemIsMovable
@@ -30,125 +37,88 @@ void PlotPad::drawItems(PlotItem* it) {
 }
 
 
-void PlotPad::dropEvent(QDropEvent* event)
-{
+void PlotPad::dropEvent(QDropEvent* event) {
 	setFocus();
-	QString str = event->mimeData()->text();//获取text
-	QPoint p = event->pos();//获取位置 --> PlotPad内的位置
-	QString dbugStr = QString("dropEvent At (%1,%2),data: %3").arg(p.x()).arg(p.y()).arg(str);
-	qDebug() << dbugStr;
-
-	//PlotItem* p1 = new PlotItem(p.rx(), p.ry(),toolKeys.at(index).toStdString());
-	PlotItem* p1 = new PlotItem(p.rx() + hBar->value(), p.ry() + vBar->value(), str);
-
-	drawItems(p1);
+	QString type = event->mimeData()->text();//获取text
+	QPoint m_dropPos = event->pos();//获取位置 --> PlotPad内的位置
+	Block* newBlock = new Block(m_dropPos.rx() /*+ hBar->value()*/, m_dropPos.ry() /*+ vBar->value()*/, type);
+	drawItems(newBlock);
 	QGraphicsView::dropEvent(event);
 }
 
 
-void PlotPad::dragEnterEvent(QDragEnterEvent* event)
-{
-	
+void PlotPad::dragEnterEvent(QDragEnterEvent* event) {
 	//设置动作为移动动作.
 	//event->setDropAction(Qt::MoveAction);
 	//然后接受事件.这个一定要写.
 	event->accept();
 }
 
-void PlotPad::dragMoveEvent(QDragMoveEvent* event)
-{
+void PlotPad::dragMoveEvent(QDragMoveEvent* event) {
 	//event->setDropAction(Qt::MoveAction);
 	event->accept();
 }
 
 //键盘事件
-void PlotPad::keyPressEvent(QKeyEvent* e)
-{
-	if (e->key() == Qt::Key::Key_Control)
-	{
-		ctlPressed = true;
-		qDebug() << "ctl pressed";
+void PlotPad::keyPressEvent(QKeyEvent* e) {
+	if (e->key() == Qt::Key::Key_Control) {
+		ctrlPressed = true;
 		e->accept();
 	}
 }
-void PlotPad::keyReleaseEvent(QKeyEvent* e)
-{
-	if (e->key() == Qt::Key::Key_Control)
-	{
-		ctlPressed = false;
-		qDebug() << "ctl released";
+void PlotPad::keyReleaseEvent(QKeyEvent* e) {
+	if (e->key() == Qt::Key::Key_Control) {
+		ctrlPressed = false;
 		e->accept();
 	}
 }
 
 //鼠标事件
-void PlotPad::mouseMoveEvent(QMouseEvent* e)
-{
-	if (ctlPressed && leftBtnClicked)
-	{
+void PlotPad::mouseMoveEvent(QMouseEvent* e) {
+	if (ctrlPressed && m_leftBtnPressed) {
 		endPoint = e->pos();
 		QPoint r = endPoint - startPoint;
-		//PlotItem* item = scene->itemAt()
-		if (r.manhattanLength() >= 5)
-		{
-			if (lastLine)
-				scene->removeItem(lastLine);
+		if (r.manhattanLength() >= 5) {
+			if (lastLine) scene->removeItem(lastLine);
 			lastLine = scene->addLine(startPoint.x(), startPoint.y(), endPoint.x(), endPoint.y());
 		}
 	}
 	QGraphicsView::mouseMoveEvent(e);
-	//update();
 }
-void PlotPad::mousePressEvent(QMouseEvent* e)
-{
-	if (e->button() == Qt::LeftButton)//左键按下
-	{
-		if (ctlPressed)//按下ctl
-		{
-			leftBtnClicked = true;
+void PlotPad::mousePressEvent(QMouseEvent* e) {
+	if (e->button() == Qt::LeftButton) {//左键按下
+		if (ctrlPressed) {//按下ctl
+			m_leftBtnPressed = true;
 			startPoint = e->pos();
-			qDebug() << "left pressed";
 		}
 	}
-	if(!ctlPressed)QGraphicsView::mousePressEvent(e);
-	
+	if(!ctrlPressed)QGraphicsView::mousePressEvent(e);
 }
-void PlotPad::mouseReleaseEvent(QMouseEvent* e)
-{
-	if (e->button() == Qt::LeftButton)
-	{
-		leftBtnClicked = false;
-		qDebug() << "left released";
-		if (lastLine)
-			scene->removeItem(lastLine);
-		if (ctlPressed)
-		{
+void PlotPad::mouseReleaseEvent(QMouseEvent* e) {
+	if (e->button() == Qt::LeftButton)	{
+		m_leftBtnPressed = false;
+		if (lastLine) scene->removeItem(lastLine);
+		if (ctrlPressed) {
 			QTransform transform;
-			PlotItem* fromItem = NULL;
-			PlotItem* toItem = NULL;
+			Block* fromItem = NULL;
+			Block* toItem = NULL;
 			Item* fItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
 			Item* tItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
-			if (fItem && tItem && fItem->className() == "PlotItem" && tItem->className() == "PlotItem")
-			{
-				fromItem = (PlotItem*)fItem;
-				toItem = (PlotItem*)tItem;
+			if (fItem && tItem && fItem->className() == "Block" && tItem->className() == "Block") {
+				fromItem = (Block*)fItem;
+				toItem = (Block*)tItem;
 			}
-			if (fromItem && toItem)
-			{
-				PlotEdge* line = new PlotEdge(fromItem, toItem, QPointF(0,0), QPointF(0, 0));
+			if (fromItem && toItem) {
+				ArrowLine* line = new ArrowLine(fromItem, toItem, QPointF(0,0), QPointF(0, 0));
 				scene->addItem(line);
-				if (fromItem->toEdge)
-				{
-					qDebug() << "enter if";
+				if (fromItem->toEdge) {
 					fromItem->toEdge->getDest()->fromEdge = NULL;
 					scene->removeItem(fromItem->toEdge);
-					qDebug() << "remove";
 					delete fromItem->toEdge;
 					fromItem->toEdge = NULL;
 				}
 				fromItem->toEdge = line;
-				if (toItem->fromEdge)
-				{
+				if (toItem->fromEdge) {
 					toItem->fromEdge->getSrc()->toEdge = NULL;
 					scene->removeItem(toItem->fromEdge);
 					delete toItem->fromEdge;
@@ -159,116 +129,95 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 		}
 	}
 	QGraphicsView::mouseReleaseEvent(e);
-	update();
 }
 
 //绘图事件
-void PlotPad::paintEvent(QPaintEvent* e)
-{
+void PlotPad::paintEvent(QPaintEvent* e) {
 	QGraphicsView::paintEvent(e);
 }
 
-
-
-
-
-
-
-
-
-
-
-
 ///////////////////////////////////////////////////// PItem ////////////////////////////////////////
-PlotItem::PlotItem(int x, int y, QString str) :Item() {
-	/*this->x = x;
-	this->y = y;*/
-	this->head = str;
+Block::Block(int x, int y, QString head) 
+	:Item()
+	, toItem(Q_NULLPTR)
+	, toEdge(Q_NULLPTR)
+	, fromEdge(Q_NULLPTR) {
+	this->type = head;
 	this->setPos(QPointF(x, y));
 }
 
-QString PlotItem::className()
-{
-	return "PlotItem";
+//Block::~Block(){
+//	if (toEdge) {
+//		delete toEdge;
+//		toEdge = Q_NULLPTR;
+//	}
+//	if (fromEdge) {
+//		delete fromEdge;
+//		fromEdge = Q_NULLPTR;
+//	}
+//	if (toItem) {
+//		delete toItem;
+//		toItem = Q_NULLPTR;
+//	}
+//}
+QString Block::className() {
+	return "Block";
 }
 
-void PlotItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
-	QWidget* widget)
-{
-	//Q_UNUSED(option);
-	//Q_UNUSED(widget);
-	//QPointF p = this->pos();
-	//painter->drawRoundedRect(p.x(), p.y(), 80, 40, 10, 10);
+void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) {
+	painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+	painter->setPen("darkslategray");
+	painter->setFont(QFont("微软雅黑", 12));
+	painter->setBrush(QBrush("lightcyan"));
 	painter->drawRoundedRect(boundingRect(), 10, 10);
-	painter->setPen(Qt::black);
-	painter->setFont(QFont("华文琥珀", 12));
-	painter->drawText(boundingRect(), Qt::AlignCenter, QObject::tr(head.toStdString().c_str()));
+	painter->drawText(boundingRect(), Qt::AlignCenter, type);
 	drawToItem(painter);
-	
-	
-	/*for (int i = 0; i < toItems.size(); ++i)
-	{
-		painter->drawLine(this->pos(), toItems[i]->pos());
-	}*/
-	//painter->drawText(sceneBoundingRect(), Qt::AlignCenter, QObject::tr(head.c_str()));
-	//QGraphicsItem::paint(painter,option,widget);
 }
 
 
-void PlotItem::drawToItem(QPainter* painter)
-{
-	if (toItem)
-	{
+void Block::drawToItem(QPainter* painter) {
+	if (toItem)	{
 		QPointF pf = this->pos(), pt = toItem->pos();
 		painter->drawLine(QPointF(0, 0), pt - pf);
 	}
 }
 
-QRectF PlotItem::boundingRect() const
-{
+QRectF Block::boundingRect() const {
 	qreal penWidth = 5;
 	QPointF p = this->pos();
-	//return QRectF(p.x() - penWidth / 2, p.y() - penWidth / 2,
+	//return QRectF(m_dropPos.x() - penWidth / 2, m_dropPos.y() - penWidth / 2,
 	//	80 + penWidth, 40 + penWidth);
-	return QRectF(-40 - penWidth / 2, -20 - penWidth / 2,
-		80 + penWidth, 40 + penWidth);
+	return QRectF(-50 - penWidth / 2, -20 - penWidth / 2,
+		100 + penWidth, 40 + penWidth);
 	//return QRectF(0, 0, 80, 40);
 }
 
 //鼠标事件
-void PlotItem::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
-{
-
-	/*foreach(PlotEdge * edge, edges) {
-		qDebug() << "edge adjust begin";
-		edge->adjust();
-	}*/
-	if(toEdge)
-		toEdge->adjust();
-	if (fromEdge)
-		fromEdge->adjust();
+void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e) {
+	if(toEdge)	toEdge->adjust();
+	if (fromEdge) fromEdge->adjust();
 	QGraphicsItem::mouseMoveEvent(e);
 }
-//void PlotItem::mousePressEvent(QGraphicsSceneMouseEvent* e)
+//void Block::mousePressEvent(QGraphicsSceneMouseEvent* e)
 //{
 //
 //}
-//void PlotItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
+//void Block::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
 //{
 //
 //}
 
 
 
-
-///////////////////////////////////////////////////// PlotEdge ////////////////////////////////////////
+///////////////////////////////////////////////////// ArrowLine ////////////////////////////////////////
 
 static const double Pi = 3.14159265358979323846264338327950288419717;
-static double TwoPi = 2.0 * Pi;
+static double circle = 2.0 * Pi;
 
-PlotEdge::PlotEdge(PlotItem* sourceNode, PlotItem* destNode, QPointF pointStart, QPointF pointEnd)
+ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPointF pointEnd)
 	: arrowSize(10)
-{
+	, source(Q_NULLPTR)
+	, dest(Q_NULLPTR) {
 	setFlags(ItemIsSelectable | ItemIsMovable);
 	setAcceptedMouseButtons(0);
 	//m_pointFlag = pointflag;
@@ -277,29 +226,25 @@ PlotEdge::PlotEdge(PlotItem* sourceNode, PlotItem* destNode, QPointF pointStart,
 	m_pointEnd = pointEnd;//偏移量
 	source = sourceNode;
 	dest = destNode;
-	//source->addEdge(this);
-	//dest->addEdge(this);
 	adjust();
-
-	//m_removeAction = new QAction(QStringLiteral("删除"), this);
-	//connect(m_removeAction, SIGNAL(triggered()), this, SLOT(slotRemoveItem()));
 }
 
-PlotItem* PlotEdge::getSrc()
-{
-	return source;
-}
+//ArrowLine::~ArrowLine() {
+//	if (source) {
+//		delete source;
+//		source = Q_NULLPTR;
+//	}
+//	if (dest) {
+//		delete dest;
+//		dest = Q_NULLPTR;
+//	}
+//}
 
-PlotItem* PlotEdge::getDest()
-{
-	return dest;
-}
+Block* ArrowLine::getSrc() { return source; }
+Block* ArrowLine::getDest() { return dest; }
 
-QString PlotEdge::className()
-{
-	return "PlotEdge";
-}
-void PlotEdge::adjust()
+QString ArrowLine::className() { return "ArrowLine"; }
+void ArrowLine::adjust()
 {
 	if (!source || !dest)
 		return;
@@ -315,7 +260,7 @@ void PlotEdge::adjust()
 	//    destPoint = mapFromItem(dest, 0, 0);
 }
 
-QRectF PlotEdge::boundingRect() const
+QRectF ArrowLine::boundingRect() const
 {
 	if (!source || !dest)
 		return QRectF();
@@ -325,7 +270,7 @@ QRectF PlotEdge::boundingRect() const
 		(destPoint + m_pointEnd).y() - (sourcePoint + m_pointStart).y()))
 		.normalized().adjusted(-extra, -extra, extra, extra);
 }
-void PlotEdge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
+void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
 	if (!source || !dest)
 		return;
@@ -333,15 +278,11 @@ void PlotEdge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget
 	if (qFuzzyCompare(line.length(), qreal(0.)))
 		return;
 	painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-	update();
 	painter->drawLine(line);
 
-	// Draw the arrows
-	//if (m_pointFlag)//
-	//	return;
 	double angle = ::acos(line.dx() / line.length());
 	if (line.dy() >= 0)
-		angle = TwoPi - angle;
+		angle = circle - angle;
 	QPointF destArrowP1 = destPoint + m_pointEnd + QPointF(sin(angle - Pi / 3) * arrowSize,
 		cos(angle - Pi / 3) * arrowSize);
 	QPointF destArrowP2 = destPoint + m_pointEnd + QPointF(sin(angle - Pi + Pi / 3) * arrowSize,
@@ -352,11 +293,9 @@ void PlotEdge::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget
 	//    painter->setBrush(Qt::black);
 	//    painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
 }
-void PlotEdge::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
+void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 {
-	qDebug() << "-----move__----------";
 	if (event->modifiers() & Qt::ShiftModifier) {
-		update();
 		return;
 	}
 	QGraphicsItem::mouseMoveEvent(event);

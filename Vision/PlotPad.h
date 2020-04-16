@@ -5,25 +5,21 @@
 #include <QGraphicsView>
 #include <QScrollBar>
 #include <qset.h>
-class PlotEdge;
-class Item :public QGraphicsItem
-{
-public:
-    virtual QString className() = 0;
+class ArrowLine;
+class Item :public QGraphicsItem {
+public:    virtual QString className() = 0;
 };
-class PlotItem :public Item {
+class Block :public Item {
 public:
+    Block(int x, int y, QString head);
+    //~Block();
     int x, y;
-    QString head;
+    QString type;
     QString content;
-    PlotItem(int x, int y, QString str);
-    QRectF boundingRect() const override;
-    //QRectF sceneBoundingRec() const override;
-    PlotItem* toItem = NULL;
-    PlotEdge* toEdge = NULL;
-    PlotEdge* fromEdge = NULL;
+    Block* toItem;
+    ArrowLine* toEdge, * fromEdge;
     QString className()override;
-    //QSet<PlotEdge*> edges;
+    QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 protected:
     //键盘事件
@@ -34,60 +30,51 @@ protected:
     /*void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;*/
 private:
-    bool ctlPressed = false;
+    bool ctrlPressed = false;
     void drawToItem(QPainter* painter);
 
 };
 
-class PlotEdge : public Item,public QObject {
+class ArrowLine : public Item,public QObject {
     //Q_OBJECT
 public:
-    PlotEdge(PlotItem* sourceItem, PlotItem* destItem, QPointF, QPointF);
+    ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF);
+    //~ArrowLine();
     void adjust();
     QString className()override;
-    PlotItem* getDest();
-    PlotItem* getSrc();
+    Block* getSrc();
+    Block* getDest();
 protected:
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
     //void contextMenuEvent(QGraphicsSceneContextMenuEvent* event);
 private:
-    PlotItem* source, * dest;
-
+    Block* source, * dest;
     QPointF sourcePoint;
     QPointF destPoint;
-
     qreal arrowSize;
-
     bool m_pointFlag;
 
     QPointF m_pointStart;//偏移量
     QPointF m_pointEnd;
 
-    //QAction* m_removeAction;
-////signals:
-////    //void remove(Edge*);
-////private slots:
-////    void slotRemoveItem();
 };
 
 class PlotPad :public QGraphicsView
 {
 	Q_OBJECT
 public:
-    PlotPad(QGraphicsScene* scene);
-    
+    PlotPad(QGraphicsScene* scene);//此处注意QGraphicsView的scene参数是子对象，第二个参数是父对象，如果只有QGraphicsScene参数，则父对象为空
+    //~PlotPad();
     //鼠标释放时，绘制图像
     QGraphicsScene* scene;
-    QScrollBar* hBar;
-    QScrollBar* vBar;
-    void drawItems(PlotItem* it);
+    void drawItems(Block* it);
+
 protected:
 	void dropEvent(QDropEvent* event)override;
 	void dragEnterEvent(QDragEnterEvent* event)override;
 	void dragMoveEvent(QDragMoveEvent* event)override;
-
     //键盘事件
     void keyPressEvent(QKeyEvent* e) override;
     void keyReleaseEvent(QKeyEvent* e) override;
@@ -95,15 +82,14 @@ protected:
     void mouseMoveEvent(QMouseEvent* e)override;
     void mousePressEvent(QMouseEvent* e)override;
     void mouseReleaseEvent(QMouseEvent* e)override;
-
     //绘图事件
-
     void paintEvent(QPaintEvent* e) override;
+
 private:
-    bool ctlPressed = false;
+    bool ctrlPressed = false;
+    bool m_leftBtnPressed = false;
     QPoint startPoint, endPoint;
-    bool leftBtnClicked = false;
-    QGraphicsItem* lastLine = NULL;
+    QGraphicsItem* lastLine ;
 public slots:
 private slots:
 };

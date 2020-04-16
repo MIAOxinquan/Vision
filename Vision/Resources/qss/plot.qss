@@ -1,0 +1,8 @@
+/*画布*/
+QAbstractScrollArea {
+    background: rgb(255,255,236)
+}
+/*实体*/
+QObject#Item   {
+    background: #9EC1E0;
+}

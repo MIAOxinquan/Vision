@@ -9,20 +9,20 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 1.57 forward to 2.03
-1.key "do" & "double" hignlight case paradox figured;
-2*.PlotPad basically built;
-3.crash caused by drag from  toolKit's blank area fixed;
-4.dragitem's text Incorrectly shown fixed;
-5.PlotItem's std::string str change to QString head,and add QString content into it;
+2.10
+1.curSmartEdit syn to curPlotPad;
+2.add icon of actions Default, NoPlot, Cpp and Java;
+3.fix the crash caused by ~Vision(), details that tabs' clear() lead to paradox with slots SynTo();
+4.drawing lines between plotitems occupies  CPU a lot, this is solved by removing all func update() in PlotPad.cpp;
+5.make plotitem or plottext antialiasing;
+6.remove all func init();
+7.timer's cycle change from 1000ms to 100ms, so that datetime can be more specific;
 
-*.code will synchronize with plot item;
-*.drawing lines between plotitems occupies  CPU a lot;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "2.03";
+const QString version = "2.10";
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -35,12 +35,33 @@ Vision::Vision(QWidget* parent)
 	, plots(new QList<PlotPad*>())
 	, edits(new QList<SmartEdit*>())
 {
-	//初始化
-	init();
+	//全局窗口
+	setMinimumSize(900, 600);
+	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
+
+	//自定义中间区：工具框、图形区、代码框
+	toolKit->setMinimumWidth(60);
+	toolKit->setMaximumWidth(200);
+	plotTab->setMinimumWidth(200);
+	editTab->setMinimumWidth(200);
+	//自定义下区：状态栏、时间标签
+	curDateTimeLabel->setAlignment(Qt::AlignRight);
+	statusBar()->addPermanentWidget(curDateTimeLabel);
+	/*
+	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
+	例如以下1号元素与2号元素宽度比为3：1
+	*/
+	for (int i = 0; i < 3; i++) {
+		globalSplitter->setStretchFactor(i, 1);
+	}
+	setCentralWidget(globalSplitter);//放在布局最后
+	//加载qss
+	loadStyleSheet(this, "global.qss");
+
 	//启动计时器
-	timer->start(1000);
+	timer->start(100);
 	showCurDateTime();
-	statusBar()->showMessage("initailizition finished!", 5000);
+	statusBar()->showMessage(QString::fromLocal8Bit("Vision为您服务"), 5000);
 	//槽函数
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
 	connect(visionUi.actionUndo, SIGNAL(triggered()), this, SLOT(Undo()));
@@ -63,48 +84,21 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionNoPlot, SIGNAL(triggered()), this, SLOT(NoPlot()));
 	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(Cpp()));
 	connect(visionUi.actionJava, SIGNAL(triggered()), this, SLOT(Java()));
-
+	connect(plotTab, SIGNAL(currentChanged(int)), this, SLOT(editSynToPad(int)));
+	connect(editTab, SIGNAL(currentChanged(int)), this, SLOT(padSynToEdit(int)));
 }
 Vision::~Vision() {
 	timer->stop();	delete timer; timer = Q_NULLPTR;
 	delete curDateTimeLabel;	curDateTimeLabel = Q_NULLPTR;
 	delete toolKit;	toolKit = Q_NULLPTR;
-	if (plotTab->count() > 0)plotTab->clear();
+	while (plotTab->count() > 0) {
+		int lastIndex = plotTab->count() - 1;
+		plotTab->removeTab(lastIndex);
+		editTab->removeTab(lastIndex);
+	}
 	delete plotTab;	plotTab = Q_NULLPTR;
-	if (editTab->count() > 0)editTab->clear();
 	delete editTab;	editTab = Q_NULLPTR;
 	delete globalSplitter; globalSplitter = Q_NULLPTR;
-}
-/*初始化*/
-void Vision::init() {
-	//全局窗口
-	setMinimumSize(900, 600);
-	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
-
-	//自定义中间区：工具框、图形区、代码框
-	toolKit->setMinimumWidth(60);
-	toolKit->setMaximumWidth(200);
-	plotTab->setMinimumWidth(200);
-	editTab->setMinimumWidth(200);
-	//自定义下区：状态栏、时间标签
-	curDateTimeLabel->setAlignment(Qt::AlignRight);
-	statusBar()->addPermanentWidget(curDateTimeLabel);
-	//变量初始化
-	/*PlotPad* pad = new PlotPad();
-	plotTab->addTab(pad, "plotPad");
-	SmartEdit* edit = new SmartEdit();
-	editTab->addTab(edit, "smartEdit");*/
-
-	/*
-	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
-	例如以下1号元素与2号元素宽度比为3：1
-	*/
-	for (int i = 0; i < 3; i++) {
-		globalSplitter->setStretchFactor(i, 1);
-	}
-	setCentralWidget(globalSplitter);//放在布局最后
-	//加载qss
-	loadStyleSheet(this, "global.qss");
 }
 
 /*时间标签*/
@@ -141,11 +135,15 @@ void Vision::closeEvent(QCloseEvent* event) {
 }
 /*默认模式*/
 void Vision::Default() {
-	globalSplitter->widget(1)->show();
+	if (plotTab->count() > 0) {
+
+	}
 }
 /*无图模式*/
 void Vision::NoPlot() {
-	globalSplitter->widget(1)->close();
+	if (editTab->count() > 0) {
+
+	}
 }
 /*C++*/
 void Vision::Cpp() {
@@ -209,11 +207,12 @@ void Vision::New() {
 	PlotPad* newPad = new PlotPad(scene);
 	plots->append(newPad);
 	plotTab->addTab(newPad, defaultName);
-	plotTab->setCurrentIndex(plotTab->count() - 1);
+	int newIndex = plotTab->count() - 1;
+	plotTab->setCurrentIndex(newIndex);
 	SmartEdit* newEdit = new SmartEdit();
 	edits->append(newEdit);
 	editTab->addTab(newEdit, defaultName);
-	editTab->setCurrentIndex(editTab->count() - 1);
+	editTab->setCurrentIndex(newIndex);
 	filePaths.append("");
 
 	visionUi.actionSave->setEnabled(true);
@@ -347,10 +346,14 @@ void Vision::Close() {
 		}
 	}
 }
-
-
-
-
-
-
-
+/*edit和plot绑定*/
+void Vision::editSynToPad(int index) {
+	if (index >= 0) {
+		editTab->setCurrentIndex(index);
+	}
+}
+void Vision::padSynToEdit(int index) {
+	if (index >= 0) {
+		plotTab->setCurrentIndex(index);
+	}
+}

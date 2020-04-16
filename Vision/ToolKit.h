@@ -7,7 +7,6 @@ class ToolKit :public QListWidget
 public:
 	ToolKit(QSplitter* parent = Q_NULLPTR);
 	~ToolKit();
-	void init();
 	QColor getToolKeyColor(int index);
 
 protected:

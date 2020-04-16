@@ -20,7 +20,6 @@ class SmartEdit: public QPlainTextEdit {
 public:
 	SmartEdit(QTabWidget* parent = Q_NULLPTR);
 	~SmartEdit();
-	void init();
 	//以下两个函数公有，因为Class RowNumArea需要
 	int getRowNumWidth();//行号块宽
 	void rowNumPlot(QPaintEvent* event);//行号区绘画

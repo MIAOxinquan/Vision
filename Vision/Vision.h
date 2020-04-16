@@ -15,7 +15,6 @@ public:
 	QLabel* curDateTimeLabel;
 	Vision(QWidget *parent = Q_NULLPTR);
 	~Vision();
-	void init();
 
 protected:
 	void closeEvent(QCloseEvent* event)override;
@@ -54,4 +53,6 @@ private slots:
 	void showCurDateTime();
 	void getCode();
 	int Quit();
+	void editSynToPad(int index);
+	void padSynToEdit(int index);
 };
