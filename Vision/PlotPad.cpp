@@ -1,9 +1,11 @@
 #include "global.h"
 #include "PlotPad.h"
+#include "SmartEdit.h"
 
 PlotPad::PlotPad(QGraphicsScene* scene)
 	: QGraphicsView()
 	, scene(Q_NULLPTR)
+	, smart(Q_NULLPTR)
 	, lastLine(Q_NULLPTR)
 {
 	this->scene = scene;
@@ -12,7 +14,6 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	setAcceptDrops(true);
 	startPoint = QPoint(100, 100);
 	endPoint = QPoint(200, 200);
-
 
 	//去掉滚动条
 	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -41,8 +42,14 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	setFocus();
 	QString type = event->mimeData()->text();//获取text
 	QPoint m_dropPos = event->pos();//获取位置 --> PlotPad内的位置
-	Block* newBlock = new Block(m_dropPos.rx() /*+ hBar->value()*/, m_dropPos.ry() /*+ vBar->value()*/, type);
+	Block* newBlock = new Block(m_dropPos.rx(), m_dropPos.ry(), type);
 	drawItems(newBlock);
+	if (smart) {
+		smart->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+		smart->insertPlainText(type);
+		newBlock->content= smart->smartCore(type);
+		qDebug() <<"content:"<< newBlock->content;
+	}
 	QGraphicsView::dropEvent(event);
 }
 
@@ -86,13 +93,28 @@ void PlotPad::mouseMoveEvent(QMouseEvent* e) {
 	QGraphicsView::mouseMoveEvent(e);
 }
 void PlotPad::mousePressEvent(QMouseEvent* e) {
-	if (e->button() == Qt::LeftButton) {//左键按下
-		if (ctrlPressed) {//按下ctl
+	if (ctrlPressed) {//按下ctl
+		if (e->button() == Qt::LeftButton) {//左键按下
 			m_leftBtnPressed = true;
 			startPoint = e->pos();
 		}
 	}
-	if(!ctrlPressed)QGraphicsView::mousePressEvent(e);
+	else {
+		QGraphicsView::mousePressEvent(e);
+		if(itemAt(e->pos())){
+			Item* curItem = (Item*)itemAt(e->pos());
+			if ("Block" == curItem->className()) {
+				Block* curBlock = (Block*)curItem;
+				smart->setPlainText(curBlock->content);
+			}
+			if ("ArrowLine" == curItem->className()) {
+				smart->setPlainText("ArrowLine");
+			}
+		}
+		else{
+			smart->setPlainText("Global");
+		}
+	}
 }
 void PlotPad::mouseReleaseEvent(QMouseEvent* e) {
 	if (e->button() == Qt::LeftButton)	{
@@ -111,20 +133,20 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e) {
 			if (fromItem && toItem) {
 				ArrowLine* line = new ArrowLine(fromItem, toItem, QPointF(0,0), QPointF(0, 0));
 				scene->addItem(line);
-				if (fromItem->toEdge) {
-					fromItem->toEdge->getDest()->fromEdge = NULL;
-					scene->removeItem(fromItem->toEdge);
-					delete fromItem->toEdge;
-					fromItem->toEdge = NULL;
+				if (fromItem->outArrow) {
+					fromItem->outArrow->getDest()->inArrow = NULL;
+					scene->removeItem(fromItem->outArrow);
+					delete fromItem->outArrow;
+					fromItem->outArrow = NULL;
 				}
-				fromItem->toEdge = line;
-				if (toItem->fromEdge) {
-					toItem->fromEdge->getSrc()->toEdge = NULL;
-					scene->removeItem(toItem->fromEdge);
-					delete toItem->fromEdge;
-					toItem->fromEdge = NULL;
+				fromItem->outArrow = line;
+				if (toItem->inArrow) {
+					toItem->inArrow->getSrc()->outArrow = NULL;
+					scene->removeItem(toItem->inArrow);
+					delete toItem->inArrow;
+					toItem->inArrow = NULL;
 				}
-				toItem->fromEdge = line;
+				toItem->inArrow = line;
 			}
 		}
 	}
@@ -137,27 +159,27 @@ void PlotPad::paintEvent(QPaintEvent* e) {
 }
 
 ///////////////////////////////////////////////////// PItem ////////////////////////////////////////
-Block::Block(int x, int y, QString head) 
+Block::Block(int x, int y, QString type) 
 	:Item()
-	, toItem(Q_NULLPTR)
-	, toEdge(Q_NULLPTR)
-	, fromEdge(Q_NULLPTR) {
-	this->type = head;
+	, nextBlock(Q_NULLPTR)
+	, outArrow(Q_NULLPTR)
+	, inArrow(Q_NULLPTR) {
+	this->type = type;
 	this->setPos(QPointF(x, y));
 }
 
 //Block::~Block(){
-//	if (toEdge) {
-//		delete toEdge;
-//		toEdge = Q_NULLPTR;
+//	if (outArrow) {
+//		delete outArrow;
+//		outArrow = Q_NULLPTR;
 //	}
-//	if (fromEdge) {
-//		delete fromEdge;
-//		fromEdge = Q_NULLPTR;
+//	if (inArrow) {
+//		delete inArrow;
+//		inArrow = Q_NULLPTR;
 //	}
-//	if (toItem) {
-//		delete toItem;
-//		toItem = Q_NULLPTR;
+//	if (nextBlock) {
+//		delete nextBlock;
+//		nextBlock = Q_NULLPTR;
 //	}
 //}
 QString Block::className() {
@@ -165,7 +187,7 @@ QString Block::className() {
 }
 
 void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) {
-	painter->setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
+	painter->setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::TextAntialiasing);
 	painter->setPen("darkslategray");
 	painter->setFont(QFont("微软雅黑", 12));
 	painter->setBrush(QBrush("lightcyan"));
@@ -176,8 +198,8 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 
 
 void Block::drawToItem(QPainter* painter) {
-	if (toItem)	{
-		QPointF pf = this->pos(), pt = toItem->pos();
+	if (nextBlock)	{
+		QPointF pf = this->pos(), pt = nextBlock->pos();
 		painter->drawLine(QPointF(0, 0), pt - pf);
 	}
 }
@@ -194,13 +216,12 @@ QRectF Block::boundingRect() const {
 
 //鼠标事件
 void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e) {
-	if(toEdge)	toEdge->adjust();
-	if (fromEdge) fromEdge->adjust();
+	if(outArrow)	outArrow->adjust();
+	if (inArrow) inArrow->adjust();
 	QGraphicsItem::mouseMoveEvent(e);
 }
 //void Block::mousePressEvent(QGraphicsSceneMouseEvent* e)
 //{
-//
 //}
 //void Block::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
 //{

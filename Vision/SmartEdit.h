@@ -23,6 +23,7 @@ public:
 	//以下两个函数公有，因为Class RowNumArea需要
 	int getRowNumWidth();//行号块宽
 	void rowNumPlot(QPaintEvent* event);//行号区绘画
+	QString smartCore(QString key);
 
 protected:
 	void resizeEvent(QResizeEvent* event)override;
@@ -40,8 +41,7 @@ private:
 	SyntaxLit* syntaxLit;
 	/*函数*/
 	QString getPrefix() const;
-	void smartCore(QString key);
-	
+
 private slots:
 	void rowContentPlot();//单行文本块绘画
 	void smartComplete(const QString& key);//智能补全关键字

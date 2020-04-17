@@ -33,11 +33,12 @@
         <file>Resources/icon/try_catch.png</file>
         <file>Resources/icon/union.png</file>
         <file>Resources/icon/while.png</file>
+        <file>Resources/icon/empty.png</file>
         <file>Resources/qss/completer.qss</file>
         <file>Resources/qss/global.qss</file>
         <file>Resources/qss/msgBox.qss</file>
+        <file>Resources/qss/plot.qss</file>
         <file>Resources/qss/smart.qss</file>
         <file>Resources/qss/tools.qss</file>
-        <file>Resources/qss/plot.qss</file>
     </qresource>
 </RCC>

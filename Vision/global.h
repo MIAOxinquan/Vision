@@ -39,16 +39,17 @@ const QStringList keys_cpp_normal = {
 };
 /*工具框关键字*/
 const QStringList toolKeys = {
-	"enum","union" ,"struct" ,"class"
-	/*0,-3, blue , class\n{\n\n}, struct\n{\n\n}, space func()\n{\n\n}*/
-	,"if"/*4, if()*/
-	,"if_else"/*5, if()\n{\n\n}\nelse\n{\n\n}*/
-	,"switch"/*6, switch()\n{\ndefault: break;\n}*/
-	,"for"/*7, for(;;)\n{\n\n}*/
-	,"while"/*8, while()\n{\n\n}*/
-	,"do_while"/*9, do\n{\n\n}while();*/
-	,"try_catch"/*10, try\n{\n\n}*/
-	,"func"/*10, func()\n{\n\n}*/
+	"empty"/*0, empty block*/
+	,"enum","union" ,"struct" ,"class"
+	/*1,-4, blue , class\n{\n\n}, struct\n{\n\n}, space func()\n{\n\n}*/
+	,"if"/*5, if()*/
+	,"if_else"/*6, if()\n{\n\n}\nelse\n{\n\n}*/
+	,"switch"/*7, switch()\n{\ndefault: break;\n}*/
+	,"for"/*8, for(;;)\n{\n\n}*/
+	,"while"/*9, while()\n{\n\n}*/
+	,"do_while"/*10, do\n{\n\n}while();*/
+	,"try_catch"/*11, try\n{\n\n}*/
+	,"func"/*12, func()\n{\n\n}*/
 };
 /*文本框智能补充字段*/
 const QStringList smarts = {

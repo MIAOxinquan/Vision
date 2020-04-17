@@ -9,20 +9,17 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-2.10
-1.curSmartEdit syn to curPlotPad;
-2.add icon of actions Default, NoPlot, Cpp and Java;
-3.fix the crash caused by ~Vision(), details that tabs' clear() lead to paradox with slots SynTo();
-4.drawing lines between plotitems occupies  CPU a lot, this is solved by removing all func update() in PlotPad.cpp;
-5.make plotitem or plottext antialiasing;
-6.remove all func init();
-7.timer's cycle change from 1000ms to 100ms, so that datetime can be more specific;
+2.15
+1.add SmartEdit* into PlotPad to support pad-samrt-content binding;
+2.SmartEdit content can change from PlotItem clicked, but attention that ArrowLine may cause crash;
+3.crash in neighbour version 2. has been solved by using Item className();
+4.add tool "empty" with icon to support custom edit;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "2.10";
+const QString version = "2.15";
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -38,7 +35,6 @@ Vision::Vision(QWidget* parent)
 	//全局窗口
 	setMinimumSize(900, 600);
 	visionUi.setupUi(this);//ui定义上区：菜单栏和工具栏
-
 	//自定义中间区：工具框、图形区、代码框
 	toolKit->setMinimumWidth(60);
 	toolKit->setMaximumWidth(200);
@@ -57,7 +53,6 @@ Vision::Vision(QWidget* parent)
 	setCentralWidget(globalSplitter);//放在布局最后
 	//加载qss
 	loadStyleSheet(this, "global.qss");
-
 	//启动计时器
 	timer->start(100);
 	showCurDateTime();
@@ -84,8 +79,8 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionNoPlot, SIGNAL(triggered()), this, SLOT(NoPlot()));
 	connect(visionUi.actionAbout, SIGNAL(triggered()), this, SLOT(Cpp()));
 	connect(visionUi.actionJava, SIGNAL(triggered()), this, SLOT(Java()));
-	connect(plotTab, SIGNAL(currentChanged(int)), this, SLOT(editSynToPad(int)));
-	connect(editTab, SIGNAL(currentChanged(int)), this, SLOT(padSynToEdit(int)));
+	connect(plotTab, SIGNAL(currentChanged(int)), this, SLOT(TabSyn_EditFollowPad(int)));
+	connect(editTab, SIGNAL(currentChanged(int)), this, SLOT(TabSyn_PadFollowEdit(int)));
 }
 Vision::~Vision() {
 	timer->stop();	delete timer; timer = Q_NULLPTR;
@@ -203,18 +198,19 @@ void Vision::getCode() {
 /*新建文件*/
 void Vision::New() {
 	QString defaultName = "#untitled@" + QString::number(plotTab->count()); 
-	QGraphicsScene* scene = new QGraphicsScene;
+	QGraphicsScene* scene = new QGraphicsScene();
 	PlotPad* newPad = new PlotPad(scene);
 	plots->append(newPad);
 	plotTab->addTab(newPad, defaultName);
 	int newIndex = plotTab->count() - 1;
 	plotTab->setCurrentIndex(newIndex);
 	SmartEdit* newEdit = new SmartEdit();
+	newPad->smart = newEdit;
 	edits->append(newEdit);
 	editTab->addTab(newEdit, defaultName);
 	editTab->setCurrentIndex(newIndex);
 	filePaths.append("");
-
+	
 	visionUi.actionSave->setEnabled(true);
 	visionUi.actionSaveAll->setEnabled(true);
 	visionUi.actionSaveAs->setEnabled(true);
@@ -347,12 +343,12 @@ void Vision::Close() {
 	}
 }
 /*edit和plot绑定*/
-void Vision::editSynToPad(int index) {
+void Vision::TabSyn_EditFollowPad(int index) {
 	if (index >= 0) {
 		editTab->setCurrentIndex(index);
 	}
 }
-void Vision::padSynToEdit(int index) {
+void Vision::TabSyn_PadFollowEdit(int index) {
 	if (index >= 0) {
 		plotTab->setCurrentIndex(index);
 	}

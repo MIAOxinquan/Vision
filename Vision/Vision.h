@@ -53,6 +53,7 @@ private slots:
 	void showCurDateTime();
 	void getCode();
 	int Quit();
-	void editSynToPad(int index);
-	void padSynToEdit(int index);
+	void TabSyn_EditFollowPad(int index);
+	void TabSyn_PadFollowEdit(int index); 
+	
 };

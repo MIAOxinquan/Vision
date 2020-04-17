@@ -1,23 +1,22 @@
-#include <QtWidgets>
-#include <QObject>
+#include <QtCore>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
-#include <QScrollBar>
-#include <qset.h>
+class SmartEdit;
+
 class ArrowLine;
 class Item :public QGraphicsItem {
 public:    virtual QString className() = 0;
 };
 class Block :public Item {
 public:
-    Block(int x, int y, QString head);
+    Block(int x, int y, QString type);
     //~Block();
     int x, y;
     QString type;
     QString content;
-    Block* toItem;
-    ArrowLine* toEdge, * fromEdge;
+    Block* nextBlock;
+    ArrowLine* outArrow, * inArrow;
     QString className()override;
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
@@ -27,8 +26,8 @@ protected:
     void keyReleaseEvent(QKeyEvent* event) override;*/
     //鼠标事件
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event)override;
-    /*void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;*/
+    //void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
+    /*void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;*/
 private:
     bool ctrlPressed = false;
     void drawToItem(QPainter* painter);
@@ -69,6 +68,7 @@ public:
     //~PlotPad();
     //鼠标释放时，绘制图像
     QGraphicsScene* scene;
+    SmartEdit* smart;
     void drawItems(Block* it);
 
 protected:

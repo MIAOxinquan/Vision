@@ -32,14 +32,15 @@ ToolKit::~ToolKit() {
 QColor ToolKit::getToolKeyColor(int index) {
 	switch (index)
 	{
-	case 0:case 1:case 2:case 3:/*enum, union, struct, class*/
+	case 0:
+		return Qt::darkGray; break;
+	case 1:case 2:case 3:case 4:/*enum, union, struct, class*/
 		return Qt::blue; break;
-	case 11:
+	case 12:
 		return QColor(205, 133, 63); break;
 	default:
 		return QColor(160, 32, 240); break;
 	}
-	return Qt::black;
 }
 /*
 void ToolKit::dragLeaveEvent(QDragLeaveEvent* event)
@@ -73,7 +74,9 @@ void ToolKit::mouseMoveEvent(QMouseEvent* event)
 				drag->setPixmap(toolPressed->icon().pixmap(120, 60));//设置拖拽时的图标
 
 				QMimeData* mimeData = new QMimeData();//拖拽产生的临时数据
-				mimeData->setText(toolPressed->text());//如果文本为空，则代码框默认接收不到任何信息，显示为禁止标志
+				QString mimeText = toolPressed->text();
+				if ("empty" == mimeText)mimeText = "";
+				mimeData->setText(mimeText);//如果文本为空，则代码框默认接收不到任何信息，显示为禁止标志
 				drag->setMimeData(mimeData);
 				auto action = drag->exec(Qt::CopyAction | Qt::MoveAction);
 		}

@@ -297,7 +297,7 @@ void SmartEdit::smartComplete(const QString& key) {
 	smartCore(key);
 }
 /*ÖÇÄÜºËÐÄ*/
-void SmartEdit::smartCore(QString key) {
+QString SmartEdit::smartCore(QString key) {
 	QString undefinedKey;
 	int moveIndex = 0, moveStep = 0;
 	if (keys_cpp_blue.contains(key)) {
@@ -487,4 +487,30 @@ void SmartEdit::smartCore(QString key) {
 			moveIndex++;
 		}
 	}
+	QString retSmart ;
+	if (toolKeys.contains(key)) {
+		retSmart = key;
+		int index = toolKeys.indexOf(key);
+		switch (index)
+		{
+		case 1:case 2:case 3:case 4:/*enum union struct class*/
+			retSmart += " "+undefined.at(0) + smarts.at(1) + ";"; break;
+		case 5:case 9:/*if while*/
+			retSmart += smarts.at(0); break;
+		case 6:/*if_else*/
+			retSmart = "if(Statement)\n{\n\n}\nelse\n{\n\n}"; break;
+		case 7:/*switch*/
+			retSmart += smarts.at(3); break;
+		case 8:/*for*/
+			retSmart += "(Statement;;)\n{\n\n}"; break;
+		case 10:/*do_while*/
+			retSmart = "do\n{\nStatement\n}while();" ; break;
+		case 11:/*try_catch*/
+			retSmart += smarts.at(6); break;
+		case 12:/*func*/
+			retSmart = "Type func()\n{\n\n}"; break;
+		default:	 break;
+		}
+	}
+	return retSmart;
 }
