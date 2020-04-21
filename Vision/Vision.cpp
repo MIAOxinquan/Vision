@@ -9,17 +9,15 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-2.15
-1.add SmartEdit* into PlotPad to support pad-samrt-content binding;
-2.SmartEdit content can change from PlotItem clicked, but attention that ArrowLine may cause crash;
-3.crash in neighbour version 2. has been solved by using Item className();
-4.add tool "empty" with icon to support custom edit;
+version 2.17
+1.add lit case nodeStart, nodeEnd, this is for node confirming;
+2.fix several highlightBlock cases, very hard problem;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "2.15";
+const QString version = "2.17";
 
 Vision::Vision(QWidget* parent)
 	: QMainWindow(parent)
@@ -205,10 +203,10 @@ void Vision::New() {
 	int newIndex = plotTab->count() - 1;
 	plotTab->setCurrentIndex(newIndex);
 	SmartEdit* newEdit = new SmartEdit();
-	newPad->smart = newEdit;
 	edits->append(newEdit);
 	editTab->addTab(newEdit, defaultName);
 	editTab->setCurrentIndex(newIndex);
+	newPad->edit = newEdit;
 	filePaths.append("");
 	
 	visionUi.actionSave->setEnabled(true);

@@ -5,7 +5,7 @@
 PlotPad::PlotPad(QGraphicsScene* scene)
 	: QGraphicsView()
 	, scene(Q_NULLPTR)
-	, smart(Q_NULLPTR)
+	, edit(Q_NULLPTR)
 	, lastLine(Q_NULLPTR)
 {
 	this->scene = scene;
@@ -44,10 +44,10 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	QPoint m_dropPos = event->pos();//获取位置 --> PlotPad内的位置
 	Block* newBlock = new Block(m_dropPos.rx(), m_dropPos.ry(), type);
 	drawItems(newBlock);
-	if (smart) {
-		smart->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
-		smart->insertPlainText(type);
-		newBlock->content= smart->smartCore(type);
+	if (edit) {
+		edit->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+		edit->insertPlainText(type);
+		newBlock->content= edit->smartCore(type);
 		qDebug() <<"content:"<< newBlock->content;
 	}
 	QGraphicsView::dropEvent(event);
@@ -105,14 +105,14 @@ void PlotPad::mousePressEvent(QMouseEvent* e) {
 			Item* curItem = (Item*)itemAt(e->pos());
 			if ("Block" == curItem->className()) {
 				Block* curBlock = (Block*)curItem;
-				smart->setPlainText(curBlock->content);
+				edit->setPlainText(curBlock->content);
 			}
 			if ("ArrowLine" == curItem->className()) {
-				smart->setPlainText("ArrowLine");
+				edit->setPlainText("ArrowLine");
 			}
 		}
 		else{
-			smart->setPlainText("Global");
+			edit->setPlainText("Global");
 		}
 	}
 }

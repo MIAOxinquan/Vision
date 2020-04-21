@@ -1,9 +1,11 @@
 #include "global.h"
 #include "SmartEdit.h"
-
+#include "PlotPad.h"
+//#include<algorithm>
 /*高亮器*/
 SyntaxLit::SyntaxLit(QTextDocument* document)
-	:QSyntaxHighlighter(document) {
+	:QSyntaxHighlighter(document)
+{
 	QRegularExpression lit;
 	QString keysPattern = "";
 	for each (const QString key in keys_cpp_purple) {
@@ -31,9 +33,7 @@ SyntaxLit::SyntaxLit(QTextDocument* document)
 		else if ("do"==key) {
 			keysPattern.append(
 				"\\w+" + key + "|"
-				+ key + "[a-tv-zA-Z0-9_]\\w*|"
-				+ key + "u[ac-zA-Z0-9_]\\w*|"
-				+ key + "ub[a-km-zA-Z0-9_]\\w*|"
+				+ key + "\\w{1,2,3}|"
 				+ key + "ubl[a-df-zA-Z0-9_]\\w*|");
 		}
 		else {
@@ -44,59 +44,109 @@ SyntaxLit::SyntaxLit(QTextDocument* document)
 	lits.append(lit);
 	lit.setPattern(sigQuote + "|" + quote);
 	lits.append(lit);
-	lit.setPattern(sigCmt);	
-	lits.append(lit);
-	lit_mulCmtStart.setPattern(mulCmtStart);
+	lit_sigCmt.setPattern(sigCmt);
+	lit_mulCmtStart.setPattern( mulCmtStart);
 	lit_mulCmtEnd.setPattern(mulCmtEnd);
+	lit_nodeStart.setPattern(nodeStart);
+	lit_nodeEnd.setPattern(nodeEnd);
 }
 /*
 语法高亮
 虚函数，同名函数必须实现，函数名不可更改
 */
 /*
-globalMatch(rowText)作用是，在文本QString : rowText遍历匹配任何符合正则表达式的字段
+globalMatch(blockText)作用是，在文本QString : rowText遍历匹配任何符合正则表达式的字段
 比如一段文字“intint int func 123 111 int“，正则式包含”int“
 那么将匹配到四个”int“，即使前两个”int“相连
 */
-void SyntaxLit::highlightBlock(const QString& rowText) {
-	QTextCharFormat textCharFormat;
+void SyntaxLit::highlightBlock(const QString &blockText) {
+	QTextCharFormat litFormat;
 	QRegularExpressionMatchIterator matchedItr;
 	for (int i = 0; i < lits.count(); i++) {
-		matchedItr = lits.at(i).globalMatch(rowText);
-		textCharFormat.setForeground(colors.at(i));
+		matchedItr = lits.at(i).globalMatch(blockText);
+		litFormat.setForeground(colors.at(i));
 		if (2 == i) {
-			textCharFormat.setFontWeight(QFont::Normal);
+			litFormat.setFontWeight(QFont::Normal);
 		}
 		else {
-			textCharFormat.setFontWeight(QFont::Bold);
+			litFormat.setFontWeight(QFont::Bold);
 		}
 		while (matchedItr.hasNext()) {//只要keyIterator存在
 			QRegularExpressionMatch matchedWord = matchedItr.next();
-			setFormat(matchedWord.capturedStart(), matchedWord.capturedLength(), textCharFormat);
+			setFormat(matchedWord.capturedStart(), matchedWord.capturedLength(), litFormat);
 		}
 	}
-	/*多行注释高亮*/
-	setCurrentBlockState(0);	
-	int startIndex = 0;
-	if (previousBlockState() != 1)
-		startIndex = lit_mulCmtStart.indexIn(rowText);
-	while (startIndex >= 0) {
-		int endIndex = lit_mulCmtEnd.indexIn(rowText, startIndex);
-		int commentLength;
-		if (endIndex == -1) {
+	litFormat.setForeground(Qt::darkGreen);
+	setCurrentBlockState(0);
+	int mulCmtStartIndex=0, nodeStartIndex=0
+		, sigCmtIndex = lit_sigCmt.indexIn(blockText);
+	if (previousBlockState() != 1) 	mulCmtStartIndex = lit_mulCmtStart.indexIn(blockText);
+	if (previousBlockState() != 2) 	nodeStartIndex = lit_nodeStart.indexIn(blockText);
+	if (sigCmtIndex >= 0) {
+		if (sigCmtIndex < mulCmtStartIndex)mulCmtStartIndex = -1;
+		if (sigCmtIndex < nodeStartIndex)nodeStartIndex = -1;
+		if (-1 == mulCmtStartIndex && -1 == nodeStartIndex)
+			setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+	}
+	/*多行注释*/
+	while (mulCmtStartIndex >= 0) {
+		int nextStartIndex = 0
+			, rowMulCmtStartMark = lit_mulCmtStart.indexIn(blockText)
+			, mulCmtEndIndex = lit_mulCmtEnd.indexIn(blockText
+				, (-1 == rowMulCmtStartMark) ? mulCmtStartIndex : mulCmtStartIndex + 2);
+		if (-1 == mulCmtEndIndex) {
 			setCurrentBlockState(1);
-			commentLength = rowText.length() - startIndex;
+			nextStartIndex = blockText.length();
 		}
 		else {
-			commentLength = endIndex - startIndex
-				+ lit_mulCmtEnd.matchedLength();
+			nextStartIndex = mulCmtEndIndex + lit_mulCmtEnd.matchedLength();
 		}
-		setFormat(startIndex, commentLength, textCharFormat);
-		startIndex = lit_mulCmtStart.indexIn(rowText, startIndex + commentLength);
+		int length = nextStartIndex - mulCmtStartIndex;
+		setFormat(mulCmtStartIndex, length, litFormat);
+		//qDebug() << "mulStartIndexBefore:" << mulCmtStartIndex;
+		if (mulCmtStartIndex > 0) {
+			sigCmtIndex = lit_sigCmt.indexIn(blockText, nextStartIndex);
+			qDebug() << "End:" << mulCmtEndIndex << "/Sig:" << sigCmtIndex;
+			if (sigCmtIndex > mulCmtEndIndex)
+				setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+		}
+		mulCmtStartIndex = lit_mulCmtStart.indexIn(blockText,  nextStartIndex);
+		//qDebug() << "mulStartIndexAfter:" << mulCmtStartIndex;
+	}
+	/*节点*/
+	while (nodeStartIndex >= 0) {
+		int nextStartIndex = 0
+			, rowSigMark = lit_sigCmt.indexIn(blockText)
+			, rowNodeStartMark = lit_nodeStart.indexIn(blockText)
+			, nodeEndIndex = lit_nodeEnd.indexIn(blockText
+				, (-1 == rowNodeStartMark) ? nodeStartIndex : nodeStartIndex + 2);
+		if (-1 == nodeEndIndex) {
+			setCurrentBlockState(2);
+			nextStartIndex = blockText.length();
+		}
+		else {
+			nextStartIndex = nodeEndIndex + lit_nodeEnd.matchedLength();
+			/*if (rowSigMark > nodeEndIndex)
+				setFormat(rowSigMark, lit_sigCmt.matchedLength(), litFormat);*/
+		}
+		int length = nextStartIndex - nodeStartIndex;
+		litFormat.setForeground(Qt::darkGray);
+		setFormat(nodeStartIndex, length, litFormat);
+		/*qDebug() << "NStartIndex:" << nodeStartIndex
+			<< "/NMarkIndex:" << rowNodeStartMark
+			<< "/NEndIndex:" << nodeEndIndex
+			<< "SigIndex" << sigCmtIndex;*/
+		//qDebug() <<"nodeStartIndexBefore:"<< nodeStartIndex;
+		if (nodeStartIndex > 0) {
+			sigCmtIndex = lit_sigCmt.indexIn(blockText, nextStartIndex);
+			litFormat.setForeground(Qt::darkGreen);
+			setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+		}
+		nodeStartIndex = lit_nodeStart.indexIn(blockText, nextStartIndex);
+		//qDebug() << "nodeStartIndexAfter:" << nodeStartIndex;
 	}
 }
-
-/*smart*/
+/*edit*/
 SmartEdit::SmartEdit(QTabWidget* parent)
 	:QPlainTextEdit(parent)
 	, syntaxLit(new SyntaxLit(this->document()))
@@ -241,11 +291,13 @@ void SmartEdit::rowContentPlot(/*int*/) {
 	//设置文本宽度，使之与行号区适配
 	setViewportMargins(getRowNumWidth() - 3, -1, -3, 0);
 	curTextCursor = textCursor();
+	/*  节点内容识别函数  */
+
 	//当前行高亮
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
 		QTextEdit::ExtraSelection selection;
-		selection.format.setBackground(QColor(Qt::cyan).lighter(192));//设置当前行背景色
+		selection.format.setBackground(QColor(Qt::cyan).lighter(180));//设置当前行背景色
 		selection.format.setProperty(QTextFormat::FullWidthSelection, true);
 		selection.cursor = textCursor();
 		selection.cursor.clearSelection();
@@ -253,6 +305,11 @@ void SmartEdit::rowContentPlot(/*int*/) {
 		setExtraSelections(extraSelections);
 	}
 }
+/*  节点内容识别函数  */
+
+
+
+
 /*
 刷新界面，只和updateRequest关联相比paintEvent大大降低cpu消耗
 */

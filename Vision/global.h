@@ -1,21 +1,22 @@
-#include <QtCore>
+ï»¿#include <QtCore>
 #include <QtWidgets>
-//Ä¬ÈÏÂ·¾¶
+//é»˜è®¤è·¯å¾„
 #define DEFAULT_PATH ".//product"
-/*ÎÄ±¾¿ò¸ßÁÁÓï·¨*/
+/*æ–‡æœ¬æ¡†é«˜äº®è¯­æ³•*/
 const QList < QColor > colors = {
 	QColor(160, 32, 240)
 	, Qt::blue
 	, Qt::black
 	, QColor(205, 104, 57)
-	, Qt::darkGreen
 };
-const QString sigQuote = "\'[^\']?\'";/*×Ö·û*/
-const QString quote = "\"[^\"]*\"";/*×Ö·û´®*/
-const QString sigCmt = "//[^\n]*";/*µ¥ĞĞ×¢ÊÍ*/
-const QString mulCmtStart = "/\\*";/*¶àĞĞ×¢ÊÍ¿ªÍ·*/
-const QString mulCmtEnd = "\\*/";/*¶àĞĞ×¢ÊÍ½áÎ²*/
-//C++
+const QString sigQuote = "\'[^\']?\'";/*å­—ç¬¦*/
+const QString quote = "\"[^\"]*\"";/*å­—ç¬¦ä¸²*/
+const QString sigCmt = "//[^\n]*";/*å•è¡Œæ³¨é‡Š*/
+const QString mulCmtStart = "/\\*";/*å¤šè¡Œæ³¨é‡Šå¼€å¤´*/
+const QString mulCmtEnd = "\\*/";/*å¤šè¡Œæ³¨é‡Šç»“å°¾*/
+const QString nodeStart = "<\\@";/*èŠ‚ç‚¹å¤´*/
+const QString nodeEnd = "\\@>";/*èŠ‚ç‚¹å°¾*/
+/*C++*/
 const QStringList keys_cpp_blue = {
 	"operator","void","bool","char"
 	,"short","int","float","double","long"
@@ -37,7 +38,7 @@ const QStringList keys_cpp_purple = {
 const QStringList keys_cpp_normal = {
 	"if_else","do_while","try_catch"/*0,1,2, complex conditions*/
 };
-/*¹¤¾ß¿ò¹Ø¼ü×Ö*/
+/*å·¥å…·æ¡†å…³é”®å­—*/
 const QStringList toolKeys = {
 	"empty"/*0, empty block*/
 	,"enum","union" ,"struct" ,"class"
@@ -51,7 +52,7 @@ const QStringList toolKeys = {
 	,"try_catch"/*11, try\n{\n\n}*/
 	,"func"/*12, func()\n{\n\n}*/
 };
-/*ÎÄ±¾¿òÖÇÄÜ²¹³ä×Ö¶Î*/
+/*æ–‡æœ¬æ¡†æ™ºèƒ½è¡¥å……å­—æ®µ*/
 const QStringList smarts = {
 	"()"/*0,  sizeof if while catch*/
 	,"\n{\n\n}"/*1, enum union struct class do try func*/
@@ -67,5 +68,5 @@ const QStringList undefined = {
 	,"Input"/*2, specail for switch*/
 	,"Type "/*3, special for func*/
 };
-/*¼ÓÔØQSS*/
+/*åŠ è½½QSS*/
 void  loadStyleSheet(QWidget* ptr, QString fullFileName);

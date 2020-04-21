@@ -68,7 +68,7 @@ public:
     //~PlotPad();
     //鼠标释放时，绘制图像
     QGraphicsScene* scene;
-    SmartEdit* smart;
+    SmartEdit* edit;
     void drawItems(Block* it);
 
 protected:
@@ -90,6 +90,7 @@ private:
     bool m_leftBtnPressed = false;
     QPoint startPoint, endPoint;
     QGraphicsItem* lastLine ;
+
 public slots:
 private slots:
 };
