@@ -7,7 +7,6 @@
 #include <qset.h>
 #include <QStack>
 #include <string>
-
 class SmartEdit;
 class ArrowLine;
 class Item : public QGraphicsItem

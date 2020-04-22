@@ -9,14 +9,15 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 2.17 forward to 3.00
-1.PlotPad version mixed, now it support stack level jumping and ArrowLine will be smart as connect edge of Block rather than center of Block;
+version 3.01
+1.add SmartEdit* edit into PlotPad;
+2.remove QScrollBar* vBar, *hBar from PlotPad;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.00";
+const QString version = "3.01";
 
 /*鼠标移动事件-标签悬停*/
 //void TipLabel::mouseMoveEvent(QMouseEvent* event) {

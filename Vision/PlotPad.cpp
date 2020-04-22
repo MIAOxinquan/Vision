@@ -3,7 +3,11 @@
 #include "SmartEdit.h"
 #include <QMap>
 
-PlotPad::PlotPad(QGraphicsScene* scene) : QGraphicsView() {
+PlotPad::PlotPad(QGraphicsScene* scene)
+	: QGraphicsView()
+	, scene(Q_NULLPTR)
+	, edit(Q_NULLPTR)
+{
 	this->scene = scene;
 	//scene->addRect(0, 0, 1000, 1000);
 	//scene->addRect(-this->width() / 2, -this->height() / 2, this->width(), this->height());
@@ -13,7 +17,6 @@ PlotPad::PlotPad(QGraphicsScene* scene) : QGraphicsView() {
 	setAcceptDrops(true);
 	startPoint = QPoint(100, 100);
 	endPoint = QPoint(200, 200);
-
 
 	//È¥µô¹ö¶¯Ìõ
 	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
