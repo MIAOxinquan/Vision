@@ -85,6 +85,7 @@
     <property name="font">
      <font>
       <family>微软雅黑</family>
+      <pointsize>12</pointsize>
      </font>
     </property>
     <property name="title">
@@ -110,6 +111,7 @@
     <property name="font">
      <font>
       <family>微软雅黑</family>
+      <pointsize>12</pointsize>
      </font>
     </property>
     <property name="title">
@@ -121,6 +123,7 @@
     <property name="font">
      <font>
       <family>微软雅黑</family>
+      <pointsize>12</pointsize>
      </font>
     </property>
     <property name="title">
@@ -136,6 +139,7 @@
       <string>模式</string>
      </property>
      <addaction name="actionDefault"/>
+     <addaction name="separator"/>
      <addaction name="actionNoPlot"/>
     </widget>
     <widget class="QMenu" name="menuLanguage">
@@ -143,9 +147,11 @@
       <string>语言</string>
      </property>
      <addaction name="actionCpp"/>
+     <addaction name="separator"/>
      <addaction name="actionJava"/>
     </widget>
     <addaction name="menuPlotPattern"/>
+    <addaction name="separator"/>
     <addaction name="menuLanguage"/>
    </widget>
    <addaction name="menuFile"/>

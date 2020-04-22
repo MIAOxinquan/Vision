@@ -78,16 +78,18 @@ void SyntaxLit::highlightBlock(const QString &blockText) {
 	}
 	litFormat.setForeground(Qt::darkGreen);
 	setCurrentBlockState(0);
-	int mulCmtStartIndex=0, nodeStartIndex=0
+	int mulCmtStartIndex = 0, nodeStartIndex = 0, nextSig = 0
 		, sigCmtIndex = lit_sigCmt.indexIn(blockText);
 	if (previousBlockState() != 1) 	mulCmtStartIndex = lit_mulCmtStart.indexIn(blockText);
 	if (previousBlockState() != 2) 	nodeStartIndex = lit_nodeStart.indexIn(blockText);
 	if (sigCmtIndex >= 0) {
 		if (sigCmtIndex < mulCmtStartIndex)mulCmtStartIndex = -1;
 		if (sigCmtIndex < nodeStartIndex)nodeStartIndex = -1;
-		if (-1 == mulCmtStartIndex && -1 == nodeStartIndex)
-			setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
 	}
+	qDebug() << "<Out_Before>Sig:" << sigCmtIndex
+		<< "/MulStart:" << mulCmtStartIndex
+		<< "/NodeStart:" << nodeStartIndex
+		<< "/NextSig" << nextSig;
 	/*多行注释*/
 	while (mulCmtStartIndex >= 0) {
 		int nextStartIndex = 0
@@ -97,21 +99,28 @@ void SyntaxLit::highlightBlock(const QString &blockText) {
 		if (-1 == mulCmtEndIndex) {
 			setCurrentBlockState(1);
 			nextStartIndex = blockText.length();
+			sigCmtIndex = -1;
 		}
 		else {
-			nextStartIndex = mulCmtEndIndex + lit_mulCmtEnd.matchedLength();
+			nextStartIndex = mulCmtEndIndex + lit_mulCmtEnd.matchedLength(); 
 		}
+		if (mulCmtStartIndex > 0) {
+			sigCmtIndex = lit_sigCmt.indexIn(blockText);
+		}
+		if (sigCmtIndex >= 0) {
+			if (sigCmtIndex >= mulCmtEndIndex + 2 && sigCmtIndex < mulCmtStartIndex) {
+				setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+				mulCmtStartIndex = -1;
+			}
+		}
+		qDebug() << "<InMul_After>MulStart:" << mulCmtStartIndex
+			<< "/Sig:" << sigCmtIndex
+			<< "/MulEnd:" << mulCmtEndIndex
+			<< "/NextMulStart:" << nextStartIndex;
+		nextSig = nextStartIndex;
 		int length = nextStartIndex - mulCmtStartIndex;
 		setFormat(mulCmtStartIndex, length, litFormat);
-		//qDebug() << "mulStartIndexBefore:" << mulCmtStartIndex;
-		if (mulCmtStartIndex > 0) {
-			sigCmtIndex = lit_sigCmt.indexIn(blockText, nextStartIndex);
-			qDebug() << "End:" << mulCmtEndIndex << "/Sig:" << sigCmtIndex;
-			if (sigCmtIndex > mulCmtEndIndex)
-				setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
-		}
 		mulCmtStartIndex = lit_mulCmtStart.indexIn(blockText,  nextStartIndex);
-		//qDebug() << "mulStartIndexAfter:" << mulCmtStartIndex;
 	}
 	/*节点*/
 	while (nodeStartIndex >= 0) {
@@ -123,28 +132,35 @@ void SyntaxLit::highlightBlock(const QString &blockText) {
 		if (-1 == nodeEndIndex) {
 			setCurrentBlockState(2);
 			nextStartIndex = blockText.length();
+			sigCmtIndex = -1;
 		}
 		else {
-			nextStartIndex = nodeEndIndex + lit_nodeEnd.matchedLength();
-			/*if (rowSigMark > nodeEndIndex)
-				setFormat(rowSigMark, lit_sigCmt.matchedLength(), litFormat);*/
+			nextStartIndex = nodeEndIndex + lit_nodeEnd.matchedLength(); 
+			if (nodeStartIndex > 0)
+				sigCmtIndex = lit_sigCmt.indexIn(blockText, nodeStartIndex);
+			if (sigCmtIndex >= 0) {
+				if (sigCmtIndex > nodeEndIndex + 2 && sigCmtIndex < nodeStartIndex
+					&& sigCmtIndex < mulCmtStartIndex) {
+					litFormat.setForeground(Qt::darkGreen);
+					setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+				}
+			}
 		}
+		nextSig = nextStartIndex;
 		int length = nextStartIndex - nodeStartIndex;
 		litFormat.setForeground(Qt::darkGray);
 		setFormat(nodeStartIndex, length, litFormat);
-		/*qDebug() << "NStartIndex:" << nodeStartIndex
-			<< "/NMarkIndex:" << rowNodeStartMark
-			<< "/NEndIndex:" << nodeEndIndex
-			<< "SigIndex" << sigCmtIndex;*/
-		//qDebug() <<"nodeStartIndexBefore:"<< nodeStartIndex;
-		if (nodeStartIndex > 0) {
-			sigCmtIndex = lit_sigCmt.indexIn(blockText, nextStartIndex);
-			litFormat.setForeground(Qt::darkGreen);
-			setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
-		}
 		nodeStartIndex = lit_nodeStart.indexIn(blockText, nextStartIndex);
-		//qDebug() << "nodeStartIndexAfter:" << nodeStartIndex;
 	}
+	sigCmtIndex = lit_sigCmt.indexIn(blockText, nextSig);
+	if (sigCmtIndex >= nextSig && -1 == mulCmtStartIndex && -1 == nodeStartIndex) {
+		litFormat.setForeground(Qt::darkGreen);
+		setFormat(sigCmtIndex, lit_sigCmt.matchedLength(), litFormat);
+	}
+	qDebug() << "<Out_After>Sig:" << sigCmtIndex
+		<< "/MulStart:" << mulCmtStartIndex
+		<< "/NodeStart:" << nodeStartIndex
+		<< "/NextSig:" << nextSig;
 }
 /*edit*/
 SmartEdit::SmartEdit(QTabWidget* parent)

@@ -7,12 +7,17 @@ namespace Ui {
 class ToolKit;
 class PlotPad;
 class SmartEdit;
+
+//class TipLabel :public QLabel {
+//protected:
+//	void mouseMoveEvent(QMouseEvent* event)override;
+//};
 class Vision : public QMainWindow
 {
 	Q_OBJECT
 
 public:
-	QLabel* curDateTimeLabel;
+	QLabel* curDateTimeLabel, * curNodePathLabel;
 	Vision(QWidget *parent = Q_NULLPTR);
 	~Vision();
 
