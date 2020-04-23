@@ -9,10 +9,8 @@
 #include <string>
 class SmartEdit;
 class ArrowLine;
-class Item : public QGraphicsItem
-{
-public:
-    virtual QString className() = 0;
+class Item : public QGraphicsItem{
+public:    virtual QString className() = 0;
 };
 
 class Block :public Item{
@@ -44,7 +42,6 @@ protected:
     /*void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;*/
 private:
-    bool ctlPressed = false;
     void drawToItem(QPainter* painter);
 
 };
@@ -79,11 +76,6 @@ private:
 
     static qreal min(qreal r1, qreal r2);
     static qreal abs(qreal r);
-    //QAction* m_removeAction;
-////signals:
-////    //void remove(Edge*);
-////private slots:
-////    void slotRemoveItem();
 };
 
 class PlotPad :public QGraphicsView
@@ -122,9 +114,9 @@ protected:
     //»æÍ¼ÊÂ¼þ
     void paintEvent(QPaintEvent* e) override;
 private:
-    bool ctlPressed = false;
+    bool ctrlPressed = false;
+    bool leftBtnPressed = false;
     QPoint startPoint, endPoint;
-    bool leftBtnClicked = false;
     QGraphicsItem* lastLine = NULL;
 
 public slots:

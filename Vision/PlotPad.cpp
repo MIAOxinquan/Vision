@@ -43,12 +43,12 @@ void PlotPad::dropEvent(QDropEvent* event)
 	QString dbugStr = QString("dropEvent At (%1,%2),data: %3").arg(p.x()).arg(p.y()).arg(str);
 	qDebug() << dbugStr;
 
-	//PlotItem* p1 = new PlotItem(p.rx(), p.ry(),toolKeys.at(index).toStdString());
+	//Block* p1 = new Block(p.rx(), p.ry(),toolKeys.at(index).toStdString());
 	QTransform transform;
 	Item* pIt = (Item*)scene->itemAt(QPointF(p), transform);
-	if (pIt && pIt->className() == "PlotEdge") return;
+	if (pIt && pIt->className() == "ArrowLine") return;
 	Block* it = (Block*)pIt;
-	//PlotItem* it = (PlotItem*)scene->itemAt(QPointF(p), transform);
+	//Block* it = (Block*)scene->itemAt(QPointF(p), transform);
 	Block* p1 = new Block(p.rx() , p.ry() , str);
 	drawItems(p1);
 	if (it) // it != NULL
@@ -87,7 +87,7 @@ void PlotPad::keyPressEvent(QKeyEvent* e)
 {
 	if (e->key() == Qt::Key::Key_Control)
 	{
-		ctlPressed = true;
+		ctrlPressed = true;
 		qDebug() << "ctl pressed";
 		e->accept();
 	}
@@ -96,7 +96,7 @@ void PlotPad::keyReleaseEvent(QKeyEvent* e)
 {
 	if (e->key() == Qt::Key::Key_Control)
 	{
-		ctlPressed = false;
+		ctrlPressed = false;
 		qDebug() << "ctl released";
 		e->accept();
 	}
@@ -105,11 +105,11 @@ void PlotPad::keyReleaseEvent(QKeyEvent* e)
 //鼠标事件
 void PlotPad::mouseMoveEvent(QMouseEvent* e)
 {
-	if (ctlPressed && leftBtnClicked)
+	if (ctrlPressed && leftBtnPressed)
 	{
 		endPoint = e->pos();
 		QPoint r = endPoint - startPoint;
-		//PlotItem* item = scene->itemAt()
+		//Block* item = scene->itemAt()
 		if (r.manhattanLength() >= 5)
 		{
 			if (lastLine)
@@ -125,13 +125,13 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 	if (e->button() == Qt::LeftButton)//左键按下
 	{
 		startPoint = e->pos();
-		if (ctlPressed)//按下ctl
+		if (ctrlPressed)//按下ctl
 		{
-			leftBtnClicked = true;
+			leftBtnPressed = true;
 			qDebug() << "left pressed";
 		}
 	}
-	if (!ctlPressed)QGraphicsView::mousePressEvent(e);
+	if (!ctrlPressed)QGraphicsView::mousePressEvent(e);
 }
 
 void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
@@ -140,7 +140,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 	{
 		QTransform transform;
 		Item* pIt = (Item*)scene->itemAt(QPointF(e->pos()), transform);
-		if (pIt && pIt->className() == "PlotEdge") return;
+		if (pIt && pIt->className() == "ArrowLine") return;
 		Block* it = (Block*)pIt;
 		if (!it)return; // 如果it为NULL，则什么都不做
 		QList<Block*>* topList = this->s.top();
@@ -209,7 +209,7 @@ void PlotPad::deleteItem() {
 	}
 	qDebug() << "try to delete";
 	scene->removeItem((QGraphicsItem*)i1);
-	if (i1->className() == "PlotItem") {
+	if (i1->className() == "Block") {
 		Block* pItem = (Block*)i1;
 		topList->removeOne(pItem);
 		if (pItem->fromEdge) {
@@ -227,13 +227,13 @@ void PlotPad::deleteItem() {
 		pItem->removeItemAllSons(pItem);
 		delete i1;
 		i1 = NULL;
-		qDebug() << "delete PlotItem successfully";
+		qDebug() << "delete Block successfully";
 	}
-	else if (i1->className() == "PlotEdge") {
+	else if (i1->className() == "ArrowLine") {
 		ArrowLine* pEdge = (ArrowLine*)i1;
 		pEdge->deleteLine(pEdge);
 		i1 = NULL;
-		qDebug() << "delete PlotEdge successfully";
+		qDebug() << "delete ArrowLine successfully";
 	}
 	//s.push(topList);
 }
@@ -298,11 +298,11 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 {
 	if (e->button() == Qt::LeftButton)
 	{
-		leftBtnClicked = false;
+		leftBtnPressed = false;
 		qDebug() << "left released";
 		if (lastLine)
 			scene->removeItem(lastLine);
-		if (ctlPressed)
+		if (ctrlPressed)
 		{
 			QTransform transform;
 			Block* fromItem = NULL;
@@ -310,7 +310,7 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 			Item* fItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
 			Item* tItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
 			
-			if (fItem && tItem && fItem->className() == "PlotItem" && tItem->className() == "PlotItem")
+			if (fItem && tItem && fItem->className() == "Block" && tItem->className() == "Block")
 			{
 				fromItem = (Block*)fItem;
 				toItem = (Block*)tItem;
@@ -372,7 +372,7 @@ Block::Block(int x, int y, QString str) :Item() {
 
 QString Block::className()
 {
-	return "PlotItem";
+	return "Block";
 }
 
 int Block::getWidth()
@@ -441,7 +441,7 @@ QRectF Block::boundingRect() const
 void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
 {
 
-	/*foreach(PlotEdge * edge, edges) {
+	/*foreach(ArrowLine * edge, edges) {
 		qDebug() << "edge adjust begin";
 		edge->adjust();
 	}*/
@@ -466,18 +466,18 @@ void Block::removeItemAllSons(Block* pItem) {
 		removeItemAllSons(p1->at(i));
 	}
 }
-//void PlotItem::mousePressEvent(QGraphicsSceneMouseEvent* e)
+//void Block::mousePressEvent(QGraphicsSceneMouseEvent* e)
 //{
 //
 //}
-//void PlotItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
+//void Block::mouseReleaseEvent(QGraphicsSceneMouseEvent* e)
 //{
 //
 //}
 
 
 
-///////////////////////////////////////////////////// PlotEdge ////////////////////////////////////////
+///////////////////////////////////////////////////// ArrowLine ////////////////////////////////////////
 
 static const double Pi = 3.14159265358979323846264338327950288419717;
 static double TwoPi = 2.0 * Pi;
@@ -516,7 +516,7 @@ Block* ArrowLine::getDest()
 
 QString ArrowLine::className()
 {
-	return "PlotEdge";
+	return "ArrowLine";
 }
 
 qreal ArrowLine::min(qreal r1, qreal r2)

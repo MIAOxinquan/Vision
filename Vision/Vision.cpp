@@ -9,15 +9,16 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.01
-1.add SmartEdit* edit into PlotPad;
-2.remove QScrollBar* vBar, *hBar from PlotPad;
+version 3.02
+1.change className() "PlotItem"&"PlotEdge" to "Block"&"ArrowLine";
+2.change "ctlPressed" in PlotPad to "ctrlPressed", remove "ctlPressed" in Block cause not used;
+3.change "leftBtnClicked" in PlotPad to "leftBtnPressed";
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.01";
+const QString version = "3.02";
 
 /*鼠标移动事件-标签悬停*/
 //void TipLabel::mouseMoveEvent(QMouseEvent* event) {
