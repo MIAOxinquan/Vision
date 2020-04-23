@@ -26,7 +26,6 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
 	s.push(new QList<Block*>());
-	path.push("PlotPad//");
 }
 
 void PlotPad::drawItems(Block* it) {
@@ -164,7 +163,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 				it->childrenBlock->at(i)->outArrow->show();
 		}
 		s.push(it->childrenBlock);
-		path.push(it->head.toStdString() + "//");
+		nodesOnPath.append(it->head);
 		QString dbugStr = QString("double click At (%1,%2)").arg(e->pos().x()).arg(e->pos().y());
 		qDebug() << dbugStr;
 	}
@@ -186,7 +185,7 @@ void PlotPad::backLevel()
 		}
 
 		s.pop();
-		path.pop();
+		nodesOnPath.removeLast();
 		topList = this->s.top();
 		for (int i = 0; i < topList->size(); ++i)
 		{
@@ -289,12 +288,13 @@ void PlotPad::myTest() {
 	//qDebug() << QString::fromStdString(getPath());
 }
 
-std::string PlotPad::getPath() {
-	std::string pth = "";
-	for (int i = 0; i < path.size(); i++) {
-		pth = pth + path.at(i);
+QString PlotPad::getNodesPath() {
+	QString nodesPath = "@PlotPad";
+	int Count = nodesOnPath.count();
+	for (int i = 0; i < Count; i++) {
+		nodesPath += "//" + nodesOnPath.at(i);
 	}
-	return  pth.substr(0, pth.length() - 2);
+	return  nodesPath;
 }
 
 void PlotPad::mouseReleaseEvent(QMouseEvent* e)
@@ -555,16 +555,13 @@ QRectF ArrowLine::boundingRect() const
 }
 QPainterPath ArrowLine::shape() const
 {
-
-	int w = 5;
-	QPainterPath path;
-	//QPainterPath path = QGraphicsLineItem::shape();
-	path.moveTo(sourcePoint);
-	path.lineTo(destPoint);
+	QPainterPath painterPath;
+	painterPath.moveTo(sourcePoint);
+	painterPath.lineTo(destPoint);
 	QPainterPathStroker stroker;
-	stroker.setWidth(w);
-	path = stroker.createStroke(path);
-	return path;
+	stroker.setWidth(1);
+	painterPath = stroker.createStroke(painterPath);
+	return painterPath;
 }
 
 void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
@@ -578,7 +575,7 @@ void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 		painter->setPen(QPen(Qt::black, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	else
 		painter->setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-	update();
+	//update();
 	painter->drawLine(line);
 
 	// Draw the arrows
@@ -607,7 +604,7 @@ void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 {
 	qDebug() << "-----move__----------";
 	if (event->modifiers() & Qt::ShiftModifier) {
-		update();
+		//update();
 		return;
 	}
 	QGraphicsItem::mouseMoveEvent(event);

@@ -9,16 +9,15 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.05
-1.remove Block* toBlock from Block, and remove func drawToItem() from Block;
-2.make func paint()& boundingRect() in Block private;
-3.change func "deleteLine" to "deleteArrowLine" in ArrowLine;
+version 3.06
+1.change nodesOnPath's type from QStack<std::string> to QStringList;
+2.change func getNodesPath()'s type from std::string to QString;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.05";
+const QString version = "3.06";
 
 /*鼠标移动事件-标签悬停*/
 //void TipLabel::mouseMoveEvent(QMouseEvent* event) {

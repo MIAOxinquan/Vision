@@ -81,8 +81,8 @@ public:
     void deleteItem();
     void myTest();
     QStack<QList<Block*>*> s;//s 顶部的QList里面存的应当是当前层显示出来的Items的列表
-    QStack<std::string> path;
-    std::string getPath();
+    QStringList nodesOnPath;
+    QString getNodesPath();
     Block* getRoot();//返回s.top()列表中的root节点
 protected:
     void dropEvent(QDropEvent* event)override;
