@@ -1,16 +1,22 @@
+#include <QtCore>
 #include <QtWidgets>
-#include <QObject>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
-#include <QScrollBar>
-#include <qset.h>
-#include <QStack>
-#include <string>
 class SmartEdit;
 class ArrowLine;
 class Item : public QGraphicsItem{
 public:    virtual QString className() = 0;
+};
+
+class TipLabel :public QLabel {
+    Q_OBJECT
+public:
+    explicit TipLabel();
+    void setElidedText(QString fullText);
+private:
+    void enterEvent(QEvent* event);
+    void leaveEvent(QEvent* event);
 };
 
 class Block :public Item{
@@ -21,6 +27,7 @@ public:
     QString head;
     QString content;
     ArrowLine* inArrow, * outArrow;
+    Block* childRoot;
     QList<Block*>* childrenBlock;
 
     QString className()override;
@@ -75,15 +82,15 @@ public:
     //鼠标释放时，绘制图像
     QGraphicsScene* scene;
     SmartEdit* edit;
+    TipLabel* pathLabel;
+    Block* root;
+    QStack<QList<Block*>*> s;//s 顶部的QList里面存的应当是当前层显示出来的Items的列表
+    QStringList nodesOnPath;
 
     void drawItems(Block* it);
     void backLevel();
     void deleteItem();
-    void myTest();
-    QStack<QList<Block*>*> s;//s 顶部的QList里面存的应当是当前层显示出来的Items的列表
-    QStringList nodesOnPath;
     QString getNodesPath();
-    Block* getRoot();//返回s.top()列表中的root节点
 protected:
     void dropEvent(QDropEvent* event)override;
     void dragEnterEvent(QDragEnterEvent* event)override;
@@ -97,7 +104,6 @@ protected:
     void mousePressEvent(QMouseEvent* e)override;
     void mouseReleaseEvent(QMouseEvent* e)override;
     void mouseDoubleClickEvent(QMouseEvent* e)override;
-    
 
     //绘图事件
     void paintEvent(QPaintEvent* e) override;

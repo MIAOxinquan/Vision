@@ -9,24 +9,19 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.06
-1.change nodesOnPath's type from QStack<std::string> to QStringList;
-2.change func getNodesPath()'s type from std::string to QString;
+version 3.08
+1.edit text will follow mousePressEvent on pad;
+2.move class TipLabel from Vision.h .cpp to PlotPad.h .cpp;
+3.TipLabel now support ToolTip;
+4.PlotPad init with QSS;
+5.modify parameters in func paint of Block;
+6.remove func getRoot() in PlotPad;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.06";
-
-/*鼠标移动事件-标签悬停*/
-//void TipLabel::mouseMoveEvent(QMouseEvent* event) {
-//	if (QMouseEvent::HoverEnter == event->type()) {
-//		QToolTip::showText(this->pos(), "123456", this);
-//		return true;
-//	}
-//	return QLabel::event(event);
-//}
+const QString version = "3.08";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -36,7 +31,7 @@ Vision::Vision(QWidget* parent)
 	, plotTab(new QTabWidget(globalSplitter))
 	, editTab(new QTabWidget(globalSplitter))
 	, curDateTimeLabel(new QLabel())
-	, curNodePathLabel(new QLabel())
+	, curNodePathLabel(new TipLabel())
 	, timer(new QTimer(this))
 	, plots(new QList<PlotPad*>())
 	, edits(new QList<SmartEdit*>())
@@ -49,16 +44,7 @@ Vision::Vision(QWidget* parent)
 	toolKit->setMaximumWidth(200);
 	plotTab->setMinimumWidth(200);
 	editTab->setMinimumWidth(200);
-	//自定义下区：状态栏、时间标签
-	//curNodePathLabel->setText("************************************");
-	curNodePathLabel->setMinimumWidth(90);
-	curNodePathLabel->setMaximumWidth(480);
-	QString string = QString::fromLocal8Bit("当前节点:12345678911111111111111111111111111");
-
-	QFontMetrics font(statusBar()->font());
-	int font_size = font.width(string);
-	string = font.elidedText(string, Qt::ElideRight, 450);//返回一个带有省略号的字符串
-	curNodePathLabel->setText(string);
+	//自定义下区：状态栏、时间标签、节点路径标签
 	statusBar()->addPermanentWidget(curNodePathLabel);
 	statusBar()->addPermanentWidget(curDateTimeLabel);
 	/*
@@ -228,6 +214,8 @@ void Vision::New() {
 	editTab->addTab(newEdit, defaultName);
 	editTab->setCurrentIndex(newIndex);
 	newPad->edit = newEdit;
+	newPad->pathLabel = curNodePathLabel;
+	curNodePathLabel->setElidedText(newPad->getNodesPath());
 	filePaths.append("");
 	
 	visionUi.actionSave->setEnabled(true);
