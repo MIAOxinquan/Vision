@@ -234,7 +234,7 @@ void PlotPad::deleteItem() {
 	}
 	else if (i1->className() == "ArrowLine") {
 		ArrowLine* pEdge = (ArrowLine*)i1;
-		pEdge->deleteLine(pEdge);
+		pEdge->deleteArrowLine(pEdge);
 		i1 = NULL;
 		qDebug() << "delete ArrowLine successfully";
 	}
@@ -367,7 +367,6 @@ void PlotPad::paintEvent(QPaintEvent* e)
 ///////////////////////////////////////////////////// PItem ////////////////////////////////////////
 Block::Block(int x, int y, QString str)
 	:Item()
-	, toBlock(Q_NULLPTR)
 	, outArrow(Q_NULLPTR)
 	, inArrow(Q_NULLPTR)
 	, childrenBlock(new QList<Block*>())
@@ -397,19 +396,8 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 		painter->setFont(QFont("Courier New", size));
 	}
 	painter->drawText(boundingRect(), Qt::AlignCenter, QObject::tr(head.toStdString().c_str()));
-	drawToItem(painter);
-
 }
 
-
-void Block::drawToItem(QPainter* painter)
-{
-	if (toBlock)
-	{
-		QPointF pf = this->pos(), pt = toBlock->pos();
-		painter->drawLine(QPointF(0, 0), pt - pf);
-	}
-}
 
 QRectF Block::boundingRect() const
 {
@@ -441,7 +429,7 @@ void Block::removeItemAllSons(Block* pItem) {
 	QList<Block*>* p1 = pItem->childrenBlock;
 	for (int i = 0; i < p1->size(); i++) {
 		if (p1->at(i)->inArrow) {
-			p1->at(i)->inArrow->deleteLine(p1->at(i)->inArrow);
+			p1->at(i)->inArrow->deleteArrowLine(p1->at(i)->inArrow);
 		}
 		removeItemAllSons(p1->at(i));
 	}
@@ -625,7 +613,7 @@ void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 	QGraphicsItem::mouseMoveEvent(event);
 }
 
-void ArrowLine::deleteLine(ArrowLine* pEdge) {
+void ArrowLine::deleteArrowLine(ArrowLine* pEdge) {
 	pEdge->fromBlock->outArrow = Q_NULLPTR;
 	pEdge->toBlock->inArrow = Q_NULLPTR;
 	delete pEdge;
