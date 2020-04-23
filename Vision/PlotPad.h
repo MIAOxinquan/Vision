@@ -15,21 +15,18 @@ public:    virtual QString className() = 0;
 
 class Block :public Item{
 public:
-    int x, y;
+    Block(int x, int y, QString str);
+    //~Block();
+    int x, y, w, h;
     QString head;
     QString content;
-    Block(int x, int y, QString str);
     QRectF boundingRect() const override;
     //QRectF sceneBoundingRec() const override;
-    Block* toItem = NULL;
-    ArrowLine* toEdge = NULL;
-    ArrowLine* fromEdge = NULL;
-    QString className()override;
+    Block* toItem;
+    QList<Block*>* sons;
+    ArrowLine* toEdge, * fromEdge;
 
-    int getWidth();
-    int getHeight();
-    QList<Block*>* sons = NULL;
-    //QSet<PlotEdge*> edges;
+    QString className()override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
     void removeItemAllSons(Block* pItem);
 protected:
@@ -50,10 +47,11 @@ class ArrowLine : public Item, public QObject{
     //Q_OBJECT
 public:
     ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF);
-    void adjust();
+    //~ArrowLine();
     QString className()override;
     Block* getDest();
     Block* getSrc();
+    void adjust();
     void deleteLine(ArrowLine* pEdge);
 protected:
     QRectF boundingRect() const override;
@@ -64,16 +62,12 @@ protected:
     //void contextMenuEvent(QGraphicsSceneContextMenuEvent* event);
 private:
     Block* source, * dest;
-    QPointF sourcePoint;
-    QPointF destPoint;
+    QPointF sourcePoint, destPoint
+        //偏移量,
+        , m_pointStart, m_pointEnd;
 
     qreal arrowSize;
-
     bool m_pointFlag;
-
-    QPointF m_pointStart;//偏移量
-    QPointF m_pointEnd;
-
     static qreal min(qreal r1, qreal r2);
     static qreal abs(qreal r);
 };
@@ -114,10 +108,9 @@ protected:
     //绘图事件
     void paintEvent(QPaintEvent* e) override;
 private:
-    bool ctrlPressed = false;
-    bool leftBtnPressed = false;
+    bool ctrlPressed, leftBtnPressed;
     QPoint startPoint, endPoint;
-    QGraphicsItem* lastLine = NULL;
+    QGraphicsItem* lastLine ;
 
 public slots:
 private slots:

@@ -7,6 +7,9 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	: QGraphicsView()
 	, scene(Q_NULLPTR)
 	, edit(Q_NULLPTR)
+	, lastLine(Q_NULLPTR)
+	, ctrlPressed(false)
+	, leftBtnPressed(false)
 {
 	this->scene = scene;
 	//scene->addRect(0, 0, 1000, 1000);
@@ -362,36 +365,24 @@ void PlotPad::paintEvent(QPaintEvent* e)
 
 
 ///////////////////////////////////////////////////// PItem ////////////////////////////////////////
-Block::Block(int x, int y, QString str) :Item() {
-	/*this->x = x;
-	this->y = y;*/
+Block::Block(int x, int y, QString str)
+	:Item()
+	, toItem(Q_NULLPTR)
+	, toEdge(Q_NULLPTR)
+	, fromEdge(Q_NULLPTR)
+	, sons(new QList<Block*>())
+	, w(100)
+	, h(40)
+{
 	this->head = str;
 	this->setPos(QPointF(x, y));
-	this->sons = new QList<Block*>();
 }
 
-QString Block::className()
-{
-	return "Block";
-}
-
-int Block::getWidth()
-{
-	return 80;
-}
-
-int Block::getHeight()
-{
-	return 40;
-}
+QString Block::className() { return "Block"; }
 
 void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 	QWidget* widget)
 {
-	//Q_UNUSED(option);
-	//Q_UNUSED(widget);
-	//QPointF p = this->pos();
-	//painter->drawRoundedRect(p.x(), p.y(), 80, 40, 10, 10);
 	painter->setBrush(QColor(0x80, 0xd6, 0xef));
 	painter->drawRoundedRect(boundingRect(), 10, 10);
 	painter->setPen(Qt::black);
@@ -408,12 +399,6 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 	painter->drawText(boundingRect(), Qt::AlignCenter, QObject::tr(head.toStdString().c_str()));
 	drawToItem(painter);
 
-	/*for (int i = 0; i < toItems.size(); ++i)
-	{
-		painter->drawLine(this->pos(), toItems[i]->pos());
-	}*/
-	//painter->drawText(sceneBoundingRect(), Qt::AlignCenter, QObject::tr(head.c_str()));
-	//QGraphicsItem::paint(painter,option,widget);
 }
 
 
@@ -428,13 +413,8 @@ void Block::drawToItem(QPainter* painter)
 
 QRectF Block::boundingRect() const
 {
-	qreal penWidth = 5;
 	QPointF p = this->pos();
-	//return QRectF(p.x() - penWidth / 2, p.y() - penWidth / 2,
-	//	80 + penWidth, 40 + penWidth);
-	return QRectF(-40 - penWidth / 2, -20 - penWidth / 2,
-		80, 40 + penWidth);
-	//return QRectF(0, 0, 80, 40);
+	return QRectF(-w / 2, -h / 2, w, h);
 }
 
 //Êó±êÊÂ¼þ
@@ -483,9 +463,12 @@ static const double Pi = 3.14159265358979323846264338327950288419717;
 static double TwoPi = 2.0 * Pi;
 
 ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPointF pointEnd)
-	: arrowSize(10)
+	: Item()
+	, source(Q_NULLPTR)
+	, dest(Q_NULLPTR)
+	, arrowSize(10)
 {
-	setFlags(ItemIsSelectable | ItemIsMovable);
+	setFlags(ItemIsSelectable | ItemIsMovable | ItemIsFocusable);
 	setAcceptedMouseButtons(0);
 	//m_pointFlag = pointflag;
 
@@ -494,8 +477,8 @@ ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPo
 	source = sourceNode;
 	dest = destNode;
 
-	this->setFlags(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable
-		| QGraphicsItem::GraphicsItemFlag::ItemIsFocusable);
+	/*this->setFlags(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable
+		| QGraphicsItem::GraphicsItemFlag::ItemIsFocusable);*/
 	//source->addEdge(this);
 	//dest->addEdge(this);
 	adjust();
@@ -535,8 +518,8 @@ void ArrowLine::adjust()
 	if (!source || !dest)
 		return;
 
-	int sWidth = source->getWidth(), sHeight = source->getHeight();
-	int dWidth = dest->getWidth(), dHeight = dest->getHeight();
+	int sWidth = source->w, sHeight = source->h;
+	int dWidth = dest->w, dHeight = dest->h;
 
 	QPointF pS = source->pos(), pD = dest->pos();
 
