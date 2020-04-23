@@ -9,19 +9,18 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.03
-1.pass PlotPad init from .h to .cpp; 
-2.pass Block init from .h to .cpp;
-3.pass ArrowLine init from .h to .cpp;
-4.let QGraphicsItem::GraphicsItemFlag::ItemIsFocusable be ItemIsFocusable;
-5.replace getWidth() & getHeight() with int w,h;
-6.modify parameters in boundingRect() of Block to make it display more delicate;
+version 3.04
+1.change Block*"toItem" to "toBlock" in Block;
+2.change QList<Block*>* "sons" to "childrenBlock" in Block;
+3.change ArrowLine* "fromEdge",*"outArrow" to "inArrow"&"outArrow" in Block;
+4.remove Inherit QObject from ArrowLine;
+5.make Block *fromBlock & *toBlock in ArrowLine public, and remove getSrc()&getDest();
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.03";
+const QString version = "3.04";
 
 /*鼠标移动事件-标签悬停*/
 //void TipLabel::mouseMoveEvent(QMouseEvent* event) {

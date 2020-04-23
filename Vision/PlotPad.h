@@ -20,13 +20,12 @@ public:
     int x, y, w, h;
     QString head;
     QString content;
-    QRectF boundingRect() const override;
-    //QRectF sceneBoundingRec() const override;
-    Block* toItem;
-    QList<Block*>* sons;
-    ArrowLine* toEdge, * fromEdge;
+    Block* toBlock;
+    ArrowLine* inArrow, * outArrow;
+    QList<Block*>* childrenBlock;
 
     QString className()override;
+    QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
     void removeItemAllSons(Block* pItem);
 protected:
@@ -43,14 +42,14 @@ private:
 
 };
 
-class ArrowLine : public Item, public QObject{
+class ArrowLine : public Item{
     //Q_OBJECT
 public:
     ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF);
     //~ArrowLine();
+    Block* fromBlock, * toBlock;
+
     QString className()override;
-    Block* getDest();
-    Block* getSrc();
     void adjust();
     void deleteLine(ArrowLine* pEdge);
 protected:
@@ -61,7 +60,6 @@ protected:
 
     //void contextMenuEvent(QGraphicsSceneContextMenuEvent* event);
 private:
-    Block* source, * dest;
     QPointF sourcePoint, destPoint
         //Æ«ÒÆÁ¿,
         , m_pointStart, m_pointEnd;

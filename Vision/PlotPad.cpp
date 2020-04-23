@@ -57,10 +57,10 @@ void PlotPad::dropEvent(QDropEvent* event)
 	if (it) // it != NULL
 	{
 		qreal maxY = -1;
-		for (int i = 0; i < it->sons->size(); ++i)
-			if (it->sons->at(i)->pos().y() > maxY)
-				maxY = it->sons->at(i)->pos().y();
-		it->sons->push_back(p1);
+		for (int i = 0; i < it->childrenBlock->size(); ++i)
+			if (it->childrenBlock->at(i)->pos().y() > maxY)
+				maxY = it->childrenBlock->at(i)->pos().y();
+		it->childrenBlock->push_back(p1);
 		p1->setPos(200, maxY + 100);
 		p1->hide();
 	}
@@ -150,20 +150,20 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 		for (int i = 0; i < topList->size(); ++i)// 隐藏父亲节点同层节点
 		{
 			topList->at(i)->hide();
-			if (topList->at(i) && topList->at(i)->fromEdge && topList->at(i)->fromEdge->isVisible())
-				topList->at(i)->fromEdge->hide();
-			if (topList->at(i) && topList->at(i)->toEdge && topList->at(i)->toEdge->isVisible())
-				topList->at(i)->toEdge->hide();
+			if (topList->at(i) && topList->at(i)->inArrow && topList->at(i)->inArrow->isVisible())
+				topList->at(i)->inArrow->hide();
+			if (topList->at(i) && topList->at(i)->outArrow && topList->at(i)->outArrow->isVisible())
+				topList->at(i)->outArrow->hide();
 		}
-		for (int i = 0; i < it->sons->size(); ++i)// 显示子层节点
+		for (int i = 0; i < it->childrenBlock->size(); ++i)// 显示子层节点
 		{
-			it->sons->at(i)->show();
-			if (it->sons->at(i)->fromEdge && !it->sons->at(i)->fromEdge->isVisible())
-				it->sons->at(i)->fromEdge->show();
-			if (it->sons->at(i)->toEdge && !it->sons->at(i)->toEdge->isVisible())
-				it->sons->at(i)->toEdge->show();
+			it->childrenBlock->at(i)->show();
+			if (it->childrenBlock->at(i)->inArrow && !it->childrenBlock->at(i)->inArrow->isVisible())
+				it->childrenBlock->at(i)->inArrow->show();
+			if (it->childrenBlock->at(i)->outArrow && !it->childrenBlock->at(i)->outArrow->isVisible())
+				it->childrenBlock->at(i)->outArrow->show();
 		}
-		s.push(it->sons);
+		s.push(it->childrenBlock);
 		path.push(it->head.toStdString() + "//");
 		QString dbugStr = QString("double click At (%1,%2)").arg(e->pos().x()).arg(e->pos().y());
 		qDebug() << dbugStr;
@@ -179,10 +179,10 @@ void PlotPad::backLevel()
 		{
 			topList->at(i)->hide();
 			
-			if (topList->at(i) && topList->at(i)->fromEdge && topList->at(i)->fromEdge->isVisible())
-				topList->at(i)->fromEdge->hide();
-			if (topList->at(i) && topList->at(i)->toEdge && topList->at(i)->toEdge->isVisible())
-				topList->at(i)->toEdge->hide();
+			if (topList->at(i) && topList->at(i)->inArrow && topList->at(i)->inArrow->isVisible())
+				topList->at(i)->inArrow->hide();
+			if (topList->at(i) && topList->at(i)->outArrow && topList->at(i)->outArrow->isVisible())
+				topList->at(i)->outArrow->hide();
 		}
 
 		s.pop();
@@ -191,10 +191,10 @@ void PlotPad::backLevel()
 		for (int i = 0; i < topList->size(); ++i)
 		{
 			topList->at(i)->show();
-			if (topList->at(i) && topList->at(i)->fromEdge && !topList->at(i)->fromEdge->isVisible())
-				topList->at(i)->fromEdge->show();
-			if (topList->at(i) && topList->at(i)->toEdge && !topList->at(i)->toEdge->isVisible())
-				topList->at(i)->toEdge->show();
+			if (topList->at(i) && topList->at(i)->inArrow && !topList->at(i)->inArrow->isVisible())
+				topList->at(i)->inArrow->show();
+			if (topList->at(i) && topList->at(i)->outArrow && !topList->at(i)->outArrow->isVisible())
+				topList->at(i)->outArrow->show();
 		}
 	}
 }
@@ -215,17 +215,17 @@ void PlotPad::deleteItem() {
 	if (i1->className() == "Block") {
 		Block* pItem = (Block*)i1;
 		topList->removeOne(pItem);
-		if (pItem->fromEdge) {
-			scene->removeItem(pItem->fromEdge);
-			pItem->fromEdge->getSrc()->toEdge = NULL;
-			delete pItem->fromEdge;
-			pItem->fromEdge = NULL;
+		if (pItem->inArrow) {
+			scene->removeItem(pItem->inArrow);
+			pItem->inArrow->fromBlock->outArrow = NULL;
+			delete pItem->inArrow;
+			pItem->inArrow = NULL;
 		}
-		if (pItem->toEdge) {
-			scene->removeItem(pItem->toEdge);
-			pItem->toEdge->getDest()->fromEdge = NULL;
-			delete pItem->toEdge;
-			pItem->toEdge = NULL;
+		if (pItem->outArrow) {
+			scene->removeItem(pItem->outArrow);
+			pItem->outArrow->toBlock->inArrow = NULL;
+			delete pItem->outArrow;
+			pItem->outArrow = NULL;
 		}
 		pItem->removeItemAllSons(pItem);
 		delete i1;
@@ -261,8 +261,8 @@ Block* PlotPad::getRoot()//返回s.top()列表中的root节点
 	int_list.append((int)list->at(0));
 	tem = list->at(0);
 	//向后遍历
-	while (tem->toEdge) {
-		tem = tem->toEdge->getDest();
+	while (tem->outArrow) {
+		tem = tem->outArrow->toBlock;
 		if (tem == list->at(0)) {
 			goto loop;
 		}
@@ -270,8 +270,8 @@ Block* PlotPad::getRoot()//返回s.top()列表中的root节点
 	}
 	//向前遍历
 	tem = list->at(0);
-	while (tem->fromEdge) {
-		tem = tem->fromEdge->getSrc();
+	while (tem->inArrow) {
+		tem = tem->inArrow->fromBlock;
 		int_list.append((int)tem);
 	}
 	//如果int_list.count != size 说明不是连通图
@@ -309,37 +309,37 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 		{
 			QTransform transform;
 			Block* fromItem = NULL;
-			Block* toItem = NULL;
+			Block* toBlock = NULL;
 			Item* fItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
 			Item* tItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
 			
 			if (fItem && tItem && fItem->className() == "Block" && tItem->className() == "Block")
 			{
 				fromItem = (Block*)fItem;
-				toItem = (Block*)tItem;
+				toBlock = (Block*)tItem;
 			}
-			if (fromItem && toItem)
+			if (fromItem && toBlock)
 			{
-				ArrowLine* line = new ArrowLine(fromItem, toItem, QPointF(0, 0), QPointF(0, 0));
+				ArrowLine* line = new ArrowLine(fromItem, toBlock, QPointF(0, 0), QPointF(0, 0));
 				scene->addItem(line);
-				if (fromItem->toEdge)
+				if (fromItem->outArrow)
 				{
 					qDebug() << "enter if";
-					fromItem->toEdge->getDest()->fromEdge = NULL;
-					scene->removeItem(fromItem->toEdge);
+					fromItem->outArrow->toBlock->inArrow = NULL;
+					scene->removeItem(fromItem->outArrow);
 					qDebug() << "remove";
-					delete fromItem->toEdge;
-					fromItem->toEdge = NULL;
+					delete fromItem->outArrow;
+					fromItem->outArrow = NULL;
 				}
-				fromItem->toEdge = line;
-				if (toItem->fromEdge)
+				fromItem->outArrow = line;
+				if (toBlock->inArrow)
 				{
-					toItem->fromEdge->getSrc()->toEdge = NULL;
-					scene->removeItem(toItem->fromEdge);
-					delete toItem->fromEdge;
-					toItem->fromEdge = NULL;
+					toBlock->inArrow->fromBlock->outArrow = NULL;
+					scene->removeItem(toBlock->inArrow);
+					delete toBlock->inArrow;
+					toBlock->inArrow = NULL;
 				}
-				toItem->fromEdge = line;
+				toBlock->inArrow = line;
 			}
 		}
 	}
@@ -367,10 +367,10 @@ void PlotPad::paintEvent(QPaintEvent* e)
 ///////////////////////////////////////////////////// PItem ////////////////////////////////////////
 Block::Block(int x, int y, QString str)
 	:Item()
-	, toItem(Q_NULLPTR)
-	, toEdge(Q_NULLPTR)
-	, fromEdge(Q_NULLPTR)
-	, sons(new QList<Block*>())
+	, toBlock(Q_NULLPTR)
+	, outArrow(Q_NULLPTR)
+	, inArrow(Q_NULLPTR)
+	, childrenBlock(new QList<Block*>())
 	, w(100)
 	, h(40)
 {
@@ -404,9 +404,9 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
 
 void Block::drawToItem(QPainter* painter)
 {
-	if (toItem)
+	if (toBlock)
 	{
-		QPointF pf = this->pos(), pt = toItem->pos();
+		QPointF pf = this->pos(), pt = toBlock->pos();
 		painter->drawLine(QPointF(0, 0), pt - pf);
 	}
 }
@@ -425,23 +425,23 @@ void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
 		qDebug() << "edge adjust begin";
 		edge->adjust();
 	}*/
-	if (toEdge)
-		toEdge->adjust();
-	if (fromEdge)
-		fromEdge->adjust();
+	if (outArrow)
+		outArrow->adjust();
+	if (inArrow)
+		inArrow->adjust();
 	QGraphicsItem::mouseMoveEvent(e);
 }
 
 //删除节点的子孙节点
 void Block::removeItemAllSons(Block* pItem) {
-	if (!(pItem->sons)) {
+	if (!(pItem->childrenBlock)) {
 		delete pItem;
 		return;
 	}
-	QList<Block*>* p1 = pItem->sons;
+	QList<Block*>* p1 = pItem->childrenBlock;
 	for (int i = 0; i < p1->size(); i++) {
-		if (p1->at(i)->fromEdge) {
-			p1->at(i)->fromEdge->deleteLine(p1->at(i)->fromEdge);
+		if (p1->at(i)->inArrow) {
+			p1->at(i)->inArrow->deleteLine(p1->at(i)->inArrow);
 		}
 		removeItemAllSons(p1->at(i));
 	}
@@ -464,8 +464,8 @@ static double TwoPi = 2.0 * Pi;
 
 ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPointF pointEnd)
 	: Item()
-	, source(Q_NULLPTR)
-	, dest(Q_NULLPTR)
+	, fromBlock(Q_NULLPTR)
+	, toBlock(Q_NULLPTR)
 	, arrowSize(10)
 {
 	setFlags(ItemIsSelectable | ItemIsMovable | ItemIsFocusable);
@@ -474,27 +474,17 @@ ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPo
 
 	m_pointStart = pointStart;//偏移量
 	m_pointEnd = pointEnd;//偏移量
-	source = sourceNode;
-	dest = destNode;
+	fromBlock = sourceNode;
+	toBlock = destNode;
 
 	/*this->setFlags(QGraphicsItem::GraphicsItemFlag::ItemIsSelectable
 		| QGraphicsItem::GraphicsItemFlag::ItemIsFocusable);*/
-	//source->addEdge(this);
-	//dest->addEdge(this);
+	//fromBlock->addEdge(this);
+	//toBlock->addEdge(this);
 	adjust();
 
 	//m_removeAction = new QAction(QStringLiteral("删除"), this);
 	//connect(m_removeAction, SIGNAL(triggered()), this, SLOT(slotRemoveItem()));
-}
-
-Block* ArrowLine::getSrc()
-{
-	return source;
-}
-
-Block* ArrowLine::getDest()
-{
-	return dest;
 }
 
 QString ArrowLine::className()
@@ -515,16 +505,16 @@ qreal ArrowLine::abs(qreal r)
 
 void ArrowLine::adjust()
 {
-	if (!source || !dest)
+	if (!fromBlock || !toBlock)
 		return;
 
-	int sWidth = source->w, sHeight = source->h;
-	int dWidth = dest->w, dHeight = dest->h;
+	int sWidth = fromBlock->w, sHeight = fromBlock->h;
+	int dWidth = toBlock->w, dHeight = toBlock->h;
 
-	QPointF pS = source->pos(), pD = dest->pos();
+	QPointF pS = fromBlock->pos(), pD = toBlock->pos();
 
-	QRectF sRect = source->boundingRect();
-	QRectF dRect = dest->boundingRect();
+	QRectF sRect = fromBlock->boundingRect();
+	QRectF dRect = toBlock->boundingRect();
 
 	qreal dx = abs(pS.x() - pD.x()), dy = abs(pS.y() - pD.y());
 	qreal xS = 0, yS = 0, xD = 0, yD = 0;
@@ -554,20 +544,20 @@ void ArrowLine::adjust()
 			yD = dHeight / 2;
 		}
 	}
-	QLineF line(mapFromItem(source, xS, yS), mapFromItem(dest, xD, yD));
+	QLineF line(mapFromItem(fromBlock, xS, yS), mapFromItem(toBlock, xD, yD));
 	//    qreal length = line.length();
 
 	prepareGeometryChange();
 
 	sourcePoint = line.p1();
 	destPoint = line.p2();
-	//    sourcePoint = mapFromItem(source, 0, 0);
-	//    destPoint = mapFromItem(dest, 0, 0);
+	//    sourcePoint = mapFromItem(fromBlock, 0, 0);
+	//    destPoint = mapFromItem(toBlock, 0, 0);
 }
 
 QRectF ArrowLine::boundingRect() const
 {
-	if (!source || !dest)
+	if (!fromBlock || !toBlock)
 		return QRectF();
 	qreal penWidth = 1;
 	qreal extra = (penWidth + arrowSize) / 2.0;
@@ -591,7 +581,7 @@ QPainterPath ArrowLine::shape() const
 
 void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidget*)
 {
-	if (!source || !dest)
+	if (!fromBlock || !toBlock)
 		return;
 	QLineF line(sourcePoint + m_pointStart, destPoint + m_pointEnd);
 	if (qFuzzyCompare(line.length(), qreal(0.)))
@@ -636,7 +626,7 @@ void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 }
 
 void ArrowLine::deleteLine(ArrowLine* pEdge) {
-	pEdge->getSrc()->toEdge = NULL;
-	pEdge->getDest()->fromEdge = NULL;
+	pEdge->fromBlock->outArrow = Q_NULLPTR;
+	pEdge->toBlock->inArrow = Q_NULLPTR;
 	delete pEdge;
 }
