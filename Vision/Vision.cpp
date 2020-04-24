@@ -9,19 +9,16 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.08
-1.edit text will follow mousePressEvent on pad;
-2.move class TipLabel from Vision.h .cpp to PlotPad.h .cpp;
-3.TipLabel now support ToolTip;
-4.PlotPad init with QSS;
-5.modify parameters in func paint of Block;
-6.remove func getRoot() in PlotPad;
+version 3.11
+1.make Block & ArrowLine more pleasing to the eye;
+2.bug of func deleteItem() in PlotPad fixed;
+3.add func setRoot() in PlotPad, now PlotPad support root node, but children node still doesn't;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.08";
+const QString version = "3.11";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -46,6 +43,7 @@ Vision::Vision(QWidget* parent)
 	editTab->setMinimumWidth(200);
 	//自定义下区：状态栏、时间标签、节点路径标签
 	statusBar()->addPermanentWidget(curNodePathLabel);
+	curNodePathLabel->hide();
 	statusBar()->addPermanentWidget(curDateTimeLabel);
 	/*
 	(index, stretch) 分割器内第index号框内元素stretch 0则不随窗体变化，1+则为比例系数
@@ -216,6 +214,7 @@ void Vision::New() {
 	newPad->edit = newEdit;
 	newPad->pathLabel = curNodePathLabel;
 	curNodePathLabel->setElidedText(newPad->getNodesPath());
+	if (curNodePathLabel->isHidden())curNodePathLabel->show();
 	filePaths.append("");
 	
 	visionUi.actionSave->setEnabled(true);

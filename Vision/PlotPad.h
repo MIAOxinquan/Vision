@@ -6,7 +6,9 @@
 class SmartEdit;
 class ArrowLine;
 class Item : public QGraphicsItem{
-public:    virtual QString className() = 0;
+public:    
+    Item();
+    virtual QString className() = 0;
 };
 
 class TipLabel :public QLabel {
@@ -23,8 +25,8 @@ class Block :public Item{
 public:
     Block(int x, int y, QString str);
     //~Block();
-    int x, y, w, h;
-    QString head;
+    int x, y, w, h, id;
+    QString type;
     QString content;
     ArrowLine* inArrow, * outArrow;
     Block* childRoot;
@@ -32,7 +34,7 @@ public:
 
     QString className()override;
     QRectF boundingRect() const override;
-    void removeItemAllSons(Block* pItem);
+    void deleteSelf();
 protected:
     //键盘事件
     /*void keyPressEvent(QKeyEvent* event) override;
@@ -55,7 +57,7 @@ public:
 
     QString className()override;
     void adjust();
-    void deleteArrowLine(ArrowLine* pEdge);
+    void deleteSelf();
 protected:
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
@@ -79,7 +81,7 @@ class PlotPad :public QGraphicsView
 public:
     PlotPad(QGraphicsScene* scene);
 
-    //鼠标释放时，绘制图像
+    int indexTotal;
     QGraphicsScene* scene;
     SmartEdit* edit;
     TipLabel* pathLabel;
@@ -87,9 +89,10 @@ public:
     QStack<QList<Block*>*> s;//s 顶部的QList里面存的应当是当前层显示出来的Items的列表
     QStringList nodesOnPath;
 
-    void drawItems(Block* it);
     void backLevel();
     void deleteItem();
+    void setRoot(Block* root);
+    void blockPlot(Block* it);
     QString getNodesPath();
 protected:
     void dropEvent(QDropEvent* event)override;
@@ -105,8 +108,6 @@ protected:
     void mouseReleaseEvent(QMouseEvent* e)override;
     void mouseDoubleClickEvent(QMouseEvent* e)override;
 
-    //绘图事件
-    void paintEvent(QPaintEvent* e) override;
 private:
     bool ctrlPressed, leftBtnPressed;
     QPoint startPoint, endPoint;
