@@ -9,16 +9,14 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.11
-1.make Block & ArrowLine more pleasing to the eye;
-2.bug of func deleteItem() in PlotPad fixed;
-3.add func setRoot() in PlotPad, now PlotPad support root node, but children node still doesn't;
+version 3.12
+1.ArrowLine now supports strong limit with Block;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.11";
+const QString version = "3.12";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)

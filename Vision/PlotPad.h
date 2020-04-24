@@ -5,12 +5,7 @@
 #include <QGraphicsView>
 class SmartEdit;
 class ArrowLine;
-class Item : public QGraphicsItem{
-public:    
-    Item();
-    virtual QString className() = 0;
-};
-
+/*TipLabel*/
 class TipLabel :public QLabel {
     Q_OBJECT
 public:
@@ -20,7 +15,13 @@ private:
     void enterEvent(QEvent* event);
     void leaveEvent(QEvent* event);
 };
-
+/*Item*/
+class Item : public QGraphicsItem {
+public:
+    Item();
+    virtual QString className() = 0;
+};
+/*Block*/
 class Block :public Item{
 public:
     Block(int x, int y, QString str);
@@ -47,7 +48,7 @@ protected:
 private:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 };
-
+/*ArrowLine*/
 class ArrowLine : public Item{
     //Q_OBJECT
 public:
@@ -74,7 +75,7 @@ private:
     static qreal min(qreal r1, qreal r2);
     static qreal abs(qreal r);
 };
-
+/*PlotPad*/
 class PlotPad :public QGraphicsView
 {
     Q_OBJECT
@@ -86,7 +87,7 @@ public:
     SmartEdit* edit;
     TipLabel* pathLabel;
     Block* root;
-    QStack<QList<Block*>*> s;//s 顶部的QList里面存的应当是当前层显示出来的Items的列表
+    QStack<QList<Block*>*> blockStack;//blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
     QStringList nodesOnPath;
 
     void backLevel();

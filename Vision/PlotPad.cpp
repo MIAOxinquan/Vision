@@ -30,7 +30,6 @@ void TipLabel::leaveEvent(QEvent* event) {
 Item::Item() {
 	setFlags(ItemIsSelectable | ItemIsMovable | ItemIsFocusable);
 }
-
 /*PlotPad*/
 PlotPad::PlotPad(QGraphicsScene* scene)
 	: QGraphicsView()
@@ -53,14 +52,14 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	//去掉滚动条
 	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	s.push(new QList<Block*>());
+	blockStack.push(new QList<Block*>());
 	loadStyleSheet(this,"plot.qss");
 }
 
 void PlotPad::blockPlot(Block* it) {
 	indexTotal++;
 	it->id = indexTotal;
-	if (s.top()->count() == 0)	setRoot(it);
+	if (blockStack.top()->count() == 0)	setRoot(it);
 	scene->addItem(it);
 	it->setFocus();
 }
@@ -87,7 +86,7 @@ void PlotPad::dropEvent(QDropEvent* event)
 		p1->hide();
 	}
 	else
-		s.top()->push_back(p1);
+		blockStack.top()->push_back(p1);
 	if (pathLabel)
 		pathLabel->setElidedText(getNodesPath());
 	QGraphicsView::dropEvent(event);
@@ -137,9 +136,9 @@ void PlotPad::mouseMoveEvent(QMouseEvent* e)
 		//Block* item = scene->itemAt()
 		if (r.manhattanLength() >= 5)
 		{
-			if (lastLine)
-				scene->removeItem(lastLine);
+			if (lastLine)scene->removeItem(lastLine);
 			lastLine = scene->addLine(startPoint.x(), startPoint.y(), endPoint.x(), endPoint.y(), QPen(Qt::DotLine));
+			lastLine->setZValue(1);
 		}
 	}
 	QGraphicsView::mouseMoveEvent(e);
@@ -177,7 +176,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 		if (pIt && pIt->className() == "ArrowLine") return;
 		Block* it = (Block*)pIt;
 		if (!it)return; // 如果it为NULL，则什么都不做
-		QList<Block*>* topList = this->s.top();
+		QList<Block*>* topList = this->blockStack.top();
 		for (int i = 0; i < topList->size(); ++i)// 隐藏父亲节点同层节点
 		{
 			topList->at(i)->hide();
@@ -194,7 +193,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 			if (it->childrenBlock->at(i)->outArrow && !it->childrenBlock->at(i)->outArrow->isVisible())
 				it->childrenBlock->at(i)->outArrow->show();
 		}
-		s.push(it->childrenBlock);
+		blockStack.push(it->childrenBlock);
 		nodesOnPath.append(it->type);
 	}
 	if (e->button() == Qt::RightButton) {
@@ -202,8 +201,6 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 			Item* focusedItem = (Item*)scene->focusItem();
 			if ("Block" == focusedItem->className()) {
 				Block* focusedBlock = (Block*)focusedItem;
-				root->type = root->type.right(root->type.length() - 1);
-				root->update();
 				setRoot(focusedBlock);
 			}
 		}
@@ -212,9 +209,9 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 
 void PlotPad::backLevel()
 {
-	if (s.size() > 1)
+	if (blockStack.size() > 1)
 	{
-		QList<Block*>* topList = this->s.top();
+		QList<Block*>* topList = this->blockStack.top();
 		for (int i = 0; i < topList->size(); ++i)
 		{
 			topList->at(i)->hide();
@@ -225,9 +222,9 @@ void PlotPad::backLevel()
 				topList->at(i)->outArrow->hide();
 		}
 
-		s.pop();
+		blockStack.pop();
 		nodesOnPath.removeLast();
-		topList = this->s.top();
+		topList = this->blockStack.top();
 		for (int i = 0; i < topList->size(); ++i)
 		{
 			topList->at(i)->show();
@@ -241,36 +238,44 @@ void PlotPad::backLevel()
 
 //删除item
 void PlotPad::deleteItem() {
-	QList<Block*>* topList = this->s.top();
 	Item* focusedItem = (Item*)this->scene->focusItem();
 	if (focusedItem) {
 		if (focusedItem->className() == "Block") {
 			Block* focusedBlock = (Block*)focusedItem;
-			topList->removeOne(focusedBlock);
 			if (focusedBlock->inArrow) {
 				focusedBlock->inArrow->deleteSelf();
 			}
 			if (focusedBlock->outArrow) {
 				focusedBlock->outArrow->deleteSelf();
 			}
-			if (focusedBlock == root)
-				setRoot(topList->first());
+			QList<Block*>* topBlock = blockStack.top();
+			blockStack.top()->removeOne(focusedBlock);
+			if (focusedBlock == root) {
+				if (0 == topBlock->count()) {
+					root = Q_NULLPTR;
+				}
+				else {
+					setRoot(topBlock->first());
+				}
+			}
 			focusedBlock->deleteSelf();
-			focusedItem = Q_NULLPTR;
 		}
 		else {
 			ArrowLine* focusedArrow = (ArrowLine*)focusedItem;
 			focusedArrow->deleteSelf();
-			focusedArrow = Q_NULLPTR;
-			focusedItem = Q_NULLPTR;
 		}
+		focusedItem = Q_NULLPTR;
 	}
 }
 
 /*设置根节点*/
 void PlotPad::setRoot(Block* newRoot) {
+	if (root) {
+		root->type = root->type.right(root->type.length() - 1);
+		root->update();
+	}
 	if (newRoot->type.at(0) != '*'){
-		this->root = newRoot;
+		root = newRoot;
 		newRoot->type = "*" + newRoot->type;
 	}
 	if (newRoot->inArrow)
@@ -292,43 +297,58 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 	if (e->button() == Qt::LeftButton)
 	{
 		leftBtnPressed = false;
-		if (lastLine)
-			scene->removeItem(lastLine);
+		if (lastLine) scene->removeItem(lastLine);
 		if (ctrlPressed)
 		{
 			QTransform transform;
-			Block* fromItem = NULL;
-			Block* toBlock = NULL;
-			Item* fItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
-			Item* tItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
-			
-			if (fItem && tItem && fItem->className() == "Block" && tItem->className() == "Block")
-			{
-				toBlock = (Block*)tItem;
-				if (toBlock == root)return;
-				fromItem = (Block*)fItem;
-			}
-			if (fromItem && toBlock)
-			{
-				ArrowLine* line = new ArrowLine(fromItem, toBlock, QPointF(0, 0), QPointF(0, 0));
-				scene->addItem(line);
-				line->setFocus();
-				if (fromItem->outArrow)
-				{
-					fromItem->outArrow->toBlock->inArrow = NULL;
-					scene->removeItem(fromItem->outArrow);
-					delete fromItem->outArrow;
-					fromItem->outArrow = NULL;
+			Item* fromItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
+			Item* toItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
+			if (fromItem && toItem
+				&& fromItem->className() == "Block"
+				&& toItem->className() == "Block") {
+				/*强约束*/
+				Block* endBlock = (Block*)toItem;
+				if (endBlock == root)return;
+				Block* startBlock = (Block*)fromItem;
+				if (startBlock == endBlock)return;
+
+				if (!startBlock->outArrow
+					|| (startBlock->outArrow && startBlock->outArrow->toBlock != endBlock)) {
+					qDebug() << "drawArrow";
+					/*弱约束*/
+					if (startBlock->outArrow) {
+						startBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
+						scene->removeItem(startBlock->outArrow);
+						delete startBlock->outArrow;
+						startBlock->outArrow = Q_NULLPTR;
+					}
+					if (endBlock->inArrow) {
+						endBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
+						scene->removeItem(endBlock->inArrow);
+						delete endBlock->inArrow;
+						endBlock->inArrow = Q_NULLPTR;
+					}
+					/*强约束*/
+					if (endBlock->outArrow) {
+						int length = 0;
+						Block* temp = endBlock;
+						while (temp->outArrow && temp->outArrow->toBlock != endBlock) {
+							temp = temp->outArrow->toBlock;
+							length++;
+						}
+						if (temp == startBlock) {
+							endBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
+							scene->removeItem(endBlock->outArrow);
+							delete endBlock->outArrow;
+							endBlock->outArrow = Q_NULLPTR;
+						}
+					}
+					ArrowLine* newArrow = new ArrowLine(startBlock, endBlock, QPointF(0, 0), QPointF(0, 0));
+					startBlock->outArrow = newArrow;
+					endBlock->inArrow = newArrow;
+					scene->addItem(newArrow);
+					newArrow->setFocus();
 				}
-				fromItem->outArrow = line;
-				if (toBlock->inArrow)
-				{
-					toBlock->inArrow->fromBlock->outArrow = NULL;
-					scene->removeItem(toBlock->inArrow);
-					delete toBlock->inArrow;
-					toBlock->inArrow = NULL;
-				}
-				toBlock->inArrow = line;
 			}
 		}
 	}
@@ -341,8 +361,8 @@ Block::Block(int x, int y, QString type)
 	, outArrow(Q_NULLPTR)
 	, inArrow(Q_NULLPTR)
 	, childrenBlock(new QList<Block*>())
-	, w(100)
-	, h(40)
+	, w(180)
+	, h(50)
 	, id(-1)
 {
 	this->type = type;
@@ -367,7 +387,7 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 		setZValue(0);
 		painter->setPen("darkslategray");
 		painter->setFont(QFont("微软雅黑", 12, QFont::Normal));
-		painter->setBrush(QBrush("lightcyan"));
+		painter->setBrush(QBrush("lightBlue"));
 	}
 	painter->drawRoundedRect(boundingRect(), 12, 12);
 	painter->drawText(boundingRect(), Qt::AlignCenter, type);
