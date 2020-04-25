@@ -42,11 +42,6 @@ QColor ToolKit::getToolKeyColor(int index) {
 		return QColor(160, 32, 240); break;
 	}
 }
-/*
-void ToolKit::dragLeaveEvent(QDragLeaveEvent* event)
-{
-	qDebug() << "dragLeave";
-}*/
 
 void ToolKit::mousePressEvent(QMouseEvent* event)
 {
@@ -56,12 +51,6 @@ void ToolKit::mousePressEvent(QMouseEvent* event)
 	}
 	QListWidget::mousePressEvent(event);//保留原QListWidget部件的鼠标点击操作.
 }
-
-/*
-void ToolKit::mouseReleaseEvent(QMouseEvent* event)
-{
-	qDebug() << "mouseRelease";
-}*/
 
 void ToolKit::mouseMoveEvent(QMouseEvent* event)
 {

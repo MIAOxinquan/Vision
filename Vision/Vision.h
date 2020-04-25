@@ -32,6 +32,7 @@ private:
 	QList<PlotPad*>* plots;//plot指针列表
 	QList<SmartEdit*>* edits;//edit指针列表
 
+	bool tabNotEmpty();
 private slots:
 	//大写是为避免和qt自带函数重名
 	void Undo();
@@ -39,7 +40,7 @@ private slots:
 	void Cut();
 	void Copy();
 	void Paste();
-	void SelectAll();
+	void BackLevel();
 	void Delete();
 	void New();
 	void Open();
@@ -57,5 +58,4 @@ private slots:
 	int Quit();
 	void TabSyn_EditFollowPad(int index);
 	void TabSyn_PadFollowEdit(int index); 
-	
 };

@@ -97,6 +97,7 @@
     <ClCompile Include="global.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PlotPad.cpp" />
+    <ClCompile Include="RecordObject.cpp" />
     <ClCompile Include="SmartEdit.cpp" />
     <ClCompile Include="ToolKit.cpp" />
     <ClCompile Include="Vision.cpp" />
@@ -118,6 +119,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h" />
+    <ClInclude Include="RecordObject.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

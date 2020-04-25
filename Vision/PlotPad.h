@@ -5,6 +5,7 @@
 #include <QGraphicsView>
 class SmartEdit;
 class ArrowLine;
+class UndoRedoStack;
 /*TipLabel*/
 class TipLabel :public QLabel {
     Q_OBJECT
@@ -50,7 +51,6 @@ private:
 };
 /*ArrowLine*/
 class ArrowLine : public Item{
-    //Q_OBJECT
 public:
     ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF);
     //~ArrowLine();
@@ -87,13 +87,15 @@ public:
     SmartEdit* edit;
     TipLabel* pathLabel;
     Block* root;
-    QStack<QList<Block*>*> blockStack;//blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
+    QStack<QList<Block*>*> blockStack; //blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
+    UndoRedoStack* undoRedoStack;
     QStringList nodesOnPath;
 
+    void undo();
+    void redo();
     void backLevel();
     void deleteItem();
     void setRoot(Block* root);
-    void blockPlot(Block* it);
     QString getNodesPath();
 protected:
     void dropEvent(QDropEvent* event)override;

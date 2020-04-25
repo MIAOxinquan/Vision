@@ -101,9 +101,9 @@
     <addaction name="separator"/>
     <addaction name="actionCut"/>
     <addaction name="separator"/>
-    <addaction name="actionSelectAll"/>
-    <addaction name="separator"/>
     <addaction name="actionDelete"/>
+    <addaction name="separator"/>
+    <addaction name="actionBackLevel"/>
     <addaction name="separator"/>
     <addaction name="actionGetCode"/>
    </widget>
@@ -181,6 +181,8 @@
    <addaction name="actionRedo"/>
    <addaction name="separator"/>
    <addaction name="actionDelete"/>
+   <addaction name="separator"/>
+   <addaction name="actionBackLevel"/>
    <addaction name="separator"/>
    <addaction name="actionGetCode"/>
    <addaction name="separator"/>
@@ -448,13 +450,19 @@
     <string>Ctrl+X</string>
    </property>
   </action>
-  <action name="actionSelectAll">
+  <action name="actionBackLevel">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
-    <iconset theme="SelectAll" resource="Vision.qrc">
-     <normaloff>:/Resources/icon/SelectAll.png</normaloff>:/Resources/icon/SelectAll.png</iconset>
+    <iconset theme="BackLevel" resource="Vision.qrc">
+     <normaloff>:/Resources/icon/BackLevel.png</normaloff>:/Resources/icon/BackLevel.png</iconset>
    </property>
    <property name="text">
-    <string>全选</string>
+    <string>返回</string>
+   </property>
+   <property name="toolTip">
+    <string>返回</string>
    </property>
    <property name="font">
     <font>
@@ -463,10 +471,13 @@
     </font>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Backspace</string>
    </property>
   </action>
   <action name="actionGetCode">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="getCode" resource="Vision.qrc">
      <normaloff>:/Resources/icon/getCode.png</normaloff>:/Resources/icon/getCode.png</iconset>

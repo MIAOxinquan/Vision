@@ -1,6 +1,7 @@
 #include "global.h"
 #include "PlotPad.h"
 #include "SmartEdit.h"
+#include "RecordObject.h"
 
 /*TipLabel*/
 TipLabel::TipLabel()
@@ -38,104 +39,91 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	, lastLine(Q_NULLPTR)
 	, pathLabel(Q_NULLPTR)
 	, root(Q_NULLPTR)
+	, undoRedoStack(new UndoRedoStack(this))
 	, ctrlPressed(false)
 	, leftBtnPressed(false)
 	, indexTotal(-1)
 {
 	this->scene = scene;
-	this->QGraphicsView::setScene(scene);
-	this->setSceneRect(0, 0, 1920, 1600);
+	QGraphicsView::setScene(scene);
+	setSceneRect(0, 0, 1920, 1600);
 	setAcceptDrops(true);
-	startPoint = QPoint(100, 100);
-	endPoint = QPoint(200, 200);
-
 	//去掉滚动条
-	this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	startPoint = QPoint(-1, -1);
+	endPoint = QPoint(-1, -1);
 	blockStack.push(new QList<Block*>());
+	/*加载qss*/
 	loadStyleSheet(this,"plot.qss");
-}
-
-void PlotPad::blockPlot(Block* it) {
-	indexTotal++;
-	it->id = indexTotal;
-	if (blockStack.top()->count() == 0)	setRoot(it);
-	scene->addItem(it);
-	it->setFocus();
 }
 
 
 void PlotPad::dropEvent(QDropEvent* event)
 {
 	setFocus();
-	QString str = event->mimeData()->text();//获取text
-	QPoint p = event->pos();//获取位置 --> PlotPad内的位置
-	Item* pIt = (Item*)scene->itemAt(QPointF(p), QTransform());
-	if (pIt && pIt->className() == "ArrowLine") return;
-	Block* it = (Block*)pIt;
-	Block* p1 = new Block(p.rx() , p.ry() , str);
-	blockPlot(p1);
-	if (it) // it != NULL
+	QString type = event->mimeData()->text();//获取text
+	QPoint ePos = event->pos();//获取位置 --> PlotPad内的位置
+	Item* itemAtPos = (Item*)scene->itemAt(QPointF(ePos), QTransform());
+	if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
+	Block* oldBlock = (Block*)itemAtPos;
+	Block* newBlock = new Block(ePos.rx() , ePos.ry() , type);
+	indexTotal++;
+	newBlock->id = indexTotal;
+	scene->addItem(newBlock);
+	newBlock->setFocus();
+	if (oldBlock) // oldBlock != NULL
 	{
 		qreal maxY = -1;
-		for (int i = 0; i < it->childrenBlock->size(); ++i)
-			if (it->childrenBlock->at(i)->pos().y() > maxY)
-				maxY = it->childrenBlock->at(i)->pos().y();
-		it->childrenBlock->push_back(p1);
-		p1->setPos(200, maxY + 100);
-		p1->hide();
+		for (int i = 0; i < oldBlock->childrenBlock->size(); ++i)
+			if (oldBlock->childrenBlock->at(i)->pos().y() > maxY)
+				maxY = oldBlock->childrenBlock->at(i)->pos().y();
+		oldBlock->childrenBlock->append(newBlock);
+		undoRedoStack->Do(new AddBlock(newBlock, oldBlock->childrenBlock));
+		newBlock->setPos(200, maxY + 100);
+		newBlock->hide();
 	}
-	else
-		blockStack.top()->push_back(p1);
-	if (pathLabel)
-		pathLabel->setElidedText(getNodesPath());
+	else {
+		if (0 == blockStack.top()->count()) {
+			setRoot(newBlock);
+			if (pathLabel)
+				pathLabel->setElidedText(getNodesPath());
+		}
+		else {
+			Block* temp = root;
+			while (temp->outArrow) {
+				temp = temp->outArrow->toBlock;
+			}
+			ArrowLine* newArrow = new ArrowLine(temp, newBlock, QPointF(0, 0), QPointF(0, 0));
+			temp->outArrow = newArrow;
+			newBlock->inArrow = newArrow;
+			scene->addItem(newArrow);
+		}
+		blockStack.top()->push_back(newBlock);
+		undoRedoStack->Do(new AddBlock(newBlock, blockStack.top()));
+	}
 	QGraphicsView::dropEvent(event);
 }
 
-
-void PlotPad::dragEnterEvent(QDragEnterEvent* event)
-{
-
-	//设置动作为移动动作.
-	//event->setDropAction(Qt::MoveAction);
-	//然后接受事件.这个一定要写.
-	event->accept();
-}
-
-void PlotPad::dragMoveEvent(QDragMoveEvent* event)
-{
-	//event->setDropAction(Qt::MoveAction);
-	event->accept();
-}
+void PlotPad::dragEnterEvent(QDragEnterEvent* event) { event->accept(); }
+void PlotPad::dragMoveEvent(QDragMoveEvent* event) { event->accept(); }
 
 //键盘事件
-void PlotPad::keyPressEvent(QKeyEvent* e)
-{
-	if (e->key() == Qt::Key::Key_Control)
-	{
-		ctrlPressed = true;
-		e->accept();
-	}
+void PlotPad::keyPressEvent(QKeyEvent* e){
+	e->accept();
+	if (e->key() == Qt::Key::Key_Control) { ctrlPressed = true; }
 }
-void PlotPad::keyReleaseEvent(QKeyEvent* e)
-{
-	if (e->key() == Qt::Key::Key_Control)
-	{
-		ctrlPressed = false;
-		e->accept();
-	}
+void PlotPad::keyReleaseEvent(QKeyEvent* e){
+	e->accept();
+	if (e->key() == Qt::Key::Key_Control) { ctrlPressed = false; }
 }
 
 //鼠标事件
-void PlotPad::mouseMoveEvent(QMouseEvent* e)
-{
-	if (ctrlPressed && leftBtnPressed)
-	{
+void PlotPad::mouseMoveEvent(QMouseEvent* e){
+	if (ctrlPressed && leftBtnPressed){
 		endPoint = e->pos();
 		QPoint r = endPoint - startPoint;
-		//Block* item = scene->itemAt()
-		if (r.manhattanLength() >= 5)
-		{
+		if (r.manhattanLength() >= 5){
 			if (lastLine)scene->removeItem(lastLine);
 			lastLine = scene->addLine(startPoint.x(), startPoint.y(), endPoint.x(), endPoint.y(), QPen(Qt::DotLine));
 			lastLine->setZValue(1);
@@ -145,8 +133,8 @@ void PlotPad::mouseMoveEvent(QMouseEvent* e)
 }
 void PlotPad::mousePressEvent(QMouseEvent* e)
 {
-	if (ctrlPressed) {//按下ctl
-		if (e->button() == Qt::LeftButton) {//左键按下
+	if (ctrlPressed) {
+		if (e->button() == Qt::LeftButton) {
 			leftBtnPressed = true;
 			startPoint = e->pos();
 		}
@@ -159,8 +147,6 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 				Block* curBlock = (Block*)curItem;
 				edit->setPlainText(curBlock->content);
 			}
-			else
-				return;
 		}
 		else {
 			edit->setPlainText("Global");
@@ -354,6 +340,8 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 	}
 	QGraphicsView::mouseReleaseEvent(e);
 }
+void PlotPad::undo() { undoRedoStack->Undo(); }
+void PlotPad::redo() { undoRedoStack->Redo(); }
 
 /*Block*/
 Block::Block(int x, int y, QString type)
@@ -361,8 +349,8 @@ Block::Block(int x, int y, QString type)
 	, outArrow(Q_NULLPTR)
 	, inArrow(Q_NULLPTR)
 	, childrenBlock(new QList<Block*>())
-	, w(180)
-	, h(50)
+	, w(150)
+	, h(60)
 	, id(-1)
 {
 	this->type = type;
@@ -378,13 +366,13 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 		| QPainter::SmoothPixmapTransform
 		| QPainter::TextAntialiasing);
 	if (hasFocus()) {
-		setZValue(1);
+		if (1 != zValue())setZValue(1);
 		painter->setPen("lightYellow");
 		painter->setFont(QFont("微软雅黑", 12, QFont::Bold));
 		painter->setBrush(QBrush("orange"));
 	}
 	else {
-		setZValue(0);
+		if (0 != zValue())setZValue(0);
 		painter->setPen("darkslategray");
 		painter->setFont(QFont("微软雅黑", 12, QFont::Normal));
 		painter->setBrush(QBrush("lightBlue"));
@@ -394,9 +382,7 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 }
 
 
-QRectF Block::boundingRect() const
-{
-	QPointF p = this->pos();
+QRectF Block::boundingRect() const {
 	return QRectF(-w / 2, -h / 2, w, h);
 }
 
@@ -433,7 +419,7 @@ ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPo
 	, arrowSize(10)
 {
 	setAcceptedMouseButtons(0);
-	setZValue(1);
+	setZValue(0);
 	m_pointStart = pointStart;//偏移量
 	m_pointEnd = pointEnd;//偏移量
 	fromBlock = sourceNode;
@@ -446,49 +432,46 @@ QString ArrowLine::className() { return "ArrowLine"; }
 qreal ArrowLine::min(qreal r1, qreal r2) { return r1 < r2 ? r1 : r2; }
 qreal ArrowLine::abs(qreal r) { return (r >= 0) ? r : -r; }
 
-void ArrowLine::adjust()
-{
+void ArrowLine::adjust() {
 	if (!fromBlock || !toBlock)return;
-
-	int sWidth = fromBlock->w, sHeight = fromBlock->h;
-	int dWidth = toBlock->w, dHeight = toBlock->h;
-
-	QPointF pS = fromBlock->pos(), pD = toBlock->pos();
-	QRectF sRect = fromBlock->boundingRect();
-	QRectF dRect = toBlock->boundingRect();
-
-	qreal dx = abs(pS.x() - pD.x()), dy = abs(pS.y() - pD.y());
-	qreal xS = 0, yS = 0, xD = 0, yD = 0;
-	if (dx > dy) // 箭头的点应该在竖直的线上
-	{
-		if (pS.x() <= pD.x()) // source在左
-		{
-			xS = sWidth / 2;
-			xD = -dWidth / 2;
+	/*所有Block宽高相同*/
+	int blockWidth = fromBlock->w, blockHeight = fromBlock->h
+		, halfWidth = blockWidth / 2, halfHeight = blockHeight / 2;
+	QPointF offsetPointF = fromBlock->pos() - toBlock->pos();
+	qreal xF = 0, yF = 0, xT = 0, yT = 0
+		, blockRatio = blockWidth / blockHeight
+		, offsetX = offsetPointF.x(), offsetY = offsetPointF.y()
+		, offsetRatio = abs(offsetX / offsetY);
+	if (1 == fromBlock->zValue()) {
+		if (offsetRatio >= blockRatio) {
+			xF = (offsetX >= 0) ? -halfWidth : halfWidth;
+			if (offsetX<-blockWidth || offsetX>blockWidth)xT = -xF;
+			else if (offsetX > -halfWidth && offsetX < halfWidth)xT = xF;
+			else yT = (offsetY >= 0) ? halfHeight : -halfHeight;
 		}
-		else // source在右
-		{
-			xS = -sWidth / 2;
-			xD = dWidth / 2;
-		}
-	}
-	else // 箭头的点应该在水平的线上
-	{
-		if (pS.y() <= pD.y()) // source在上
-		{
-			yS = sHeight / 2;
-			yD = -dHeight / 2;
-		}
-		else // source在下
-		{
-			yS = -sHeight / 2;
-			yD = dHeight / 2;
+		else {
+			yF = (offsetY >= 0) ? -halfHeight : halfHeight;
+			if (offsetY<-blockHeight || offsetY>blockHeight)yT = -yF;
+			else if (offsetY > -halfHeight && offsetY < halfHeight)yT = yF;
+			else xT = (offsetX >= 0) ? halfWidth : -halfWidth;
 		}
 	}
-	QLineF line(mapFromItem(fromBlock, xS, yS), mapFromItem(toBlock, xD, yD));
-
+	else {
+		if (offsetRatio >= blockRatio) {
+			xT = (offsetX >= 0) ? halfWidth : -halfWidth;
+			if (offsetX<-blockWidth || offsetX>blockWidth)xF = -xT;
+			else if (offsetX > -halfWidth && offsetX < halfWidth)xF = xT;
+			else yF = (offsetY >= 0) ? -halfHeight : halfHeight;
+		}
+		else {
+			yT = (offsetY >= 0) ? halfHeight : -halfHeight;
+			if (offsetY<-blockHeight || offsetY>blockHeight)yF = -yT;
+			else if (offsetY > -halfHeight && offsetY < halfHeight)yF = yT;
+			else xF = (offsetX >= 0) ? -halfWidth : halfWidth;
+		}
+	}
+	QLineF line(mapFromItem(fromBlock, xF, yF), mapFromItem(toBlock, xT, yT));
 	prepareGeometryChange();
-
 	sourcePoint = line.p1();
 	destPoint = line.p2();
 }
@@ -530,11 +513,14 @@ void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 	QPointF destArrowP2 = destPoint + m_pointEnd + QPointF(sin(angle - Pi + Pi / 3) * arrowSize,
 		cos(angle - Pi + Pi / 3) * arrowSize);
 
-	if (hasFocus())
+	if (hasFocus()) {
+		if (1 != zValue())setZValue(1);
 		painter->setPen(QPen(QColor("orange"), 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-	else
+	}
+	else {
+		if (0 != zValue())setZValue(0);
 		painter->setPen(QPen(QColor("darkslategray"), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-
+	}
 	painter->drawLine(line);
 	painter->drawLine(QLineF(destArrowP1, destPoint + m_pointEnd));
 	painter->drawLine(QLineF(destArrowP2, destPoint + m_pointEnd));

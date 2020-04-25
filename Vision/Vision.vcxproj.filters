@@ -43,6 +43,9 @@
     <ClCompile Include="global.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RecordObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="Vision.h">
@@ -73,6 +76,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RecordObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

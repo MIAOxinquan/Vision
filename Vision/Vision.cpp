@@ -9,14 +9,18 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.12
-1.ArrowLine now supports strong limit with Block;
+version 3.17
+1.ArrowLine now supports strong ajust;
+2.PlotPad now supports auto ArrowLine;
+3.remove Action "SelectAll", add Action "BackLevel";
+4.add class RecordObject with .h & .cpp;
+5.make logic of ToolBar Buttons more clear;
 
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.12";
+const QString version = "3.17";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -64,7 +68,7 @@ Vision::Vision(QWidget* parent)
 	connect(visionUi.actionCut, SIGNAL(triggered()), this, SLOT(Cut()));
 	connect(visionUi.actionCopy, SIGNAL(triggered()), this, SLOT(Copy()));
 	connect(visionUi.actionPaste, SIGNAL(triggered()), this, SLOT(Paste()));
-	connect(visionUi.actionSelectAll, SIGNAL(triggered()), this, SLOT(SelectAll()));
+	connect(visionUi.actionBackLevel, SIGNAL(triggered()), this, SLOT(BackLevel()));
 	connect(visionUi.actionDelete, SIGNAL(triggered()), this, SLOT(Delete()));
 	connect(visionUi.actionGetCode, SIGNAL(triggered()), this, SLOT(getCode()));
 	connect(visionUi.actionNew, SIGNAL(triggered()), this, SLOT(New()));
@@ -129,15 +133,19 @@ int Vision::Quit() {
 void Vision::closeEvent(QCloseEvent* event) {
 	if (QMessageBox::Cancel == Quit())event->ignore();
 }
+/*tab不空*/
+bool Vision::tabNotEmpty() {
+	return editTab->count() >= 0;
+}
 /*默认模式*/
 void Vision::Default() {
-	if (plotTab->count() > 0) {
+	if (tabNotEmpty()) {
 
 	}
 }
 /*无图模式*/
 void Vision::NoPlot() {
-	if (editTab->count() > 0) {
+	if (tabNotEmpty()) {
 
 	}
 }
@@ -165,11 +173,13 @@ void Vision::About() {
 }
 /*撤回*/
 void Vision::Undo() {
-	plots->at(plotTab->currentIndex())->backLevel();
+	if(tabNotEmpty())
+		plots->at(plotTab->currentIndex())->undo();
 }
 /*重做*/
 void Vision::Redo() {
-
+	if (tabNotEmpty())
+		plots->at(plotTab->currentIndex())->redo();
 }
 /*剪切*/
 void Vision::Cut() {
@@ -184,79 +194,77 @@ void Vision::Paste() {
 
 }
 /*全选*/
-void Vision::SelectAll() {
-
+void Vision::BackLevel() {
+	if (tabNotEmpty())
+		plots->at(plotTab->currentIndex())->backLevel();
 }
 /*删除*/
 void Vision::Delete() {
-	plots->at(plotTab->currentIndex())->deleteItem();
+	if (tabNotEmpty())
+		plots->at(plotTab->currentIndex())->deleteItem();
 }
 /*取码*/
 void Vision::getCode() {
-	edits->at(editTab->currentIndex())->selectAll();
-	edits->at(editTab->currentIndex())->copy();
+	if (tabNotEmpty()) {
+		int curIndex = editTab->currentIndex();
+		SmartEdit* curEdit = edits->at(curIndex);
+		curEdit->selectAll();
+		curEdit->copy();
+	}
 }
 /*新建文件*/
 void Vision::New() {
-	QString defaultName = "#untitled@" + QString::number(plotTab->count()); 
-	QGraphicsScene* scene = new QGraphicsScene();
-	PlotPad* newPad = new PlotPad(scene);
-	plots->append(newPad);
-	plotTab->addTab(newPad, defaultName);
-	int newIndex = plotTab->count() - 1;
-	plotTab->setCurrentIndex(newIndex);
-	SmartEdit* newEdit = new SmartEdit();
-	edits->append(newEdit);
-	editTab->addTab(newEdit, defaultName);
-	editTab->setCurrentIndex(newIndex);
-	newPad->edit = newEdit;
-	newPad->pathLabel = curNodePathLabel;
-	curNodePathLabel->setElidedText(newPad->getNodesPath());
-	if (curNodePathLabel->isHidden())curNodePathLabel->show();
-	filePaths.append("");
-	
-	visionUi.actionSave->setEnabled(true);
-	visionUi.actionSaveAll->setEnabled(true);
-	visionUi.actionSaveAs->setEnabled(true);
-	visionUi.actionClose->setEnabled(true);
-	visionUi.actionCopy->setEnabled(true);
-	visionUi.actionCut->setEnabled(true);
-	visionUi.actionDelete->setEnabled(true);
-	visionUi.actionPaste->setEnabled(true);
-	visionUi.actionRedo->setEnabled(true);
-	visionUi.actionUndo->setEnabled(true);
-}
-/*打开文件*/
-void Vision::Open() {
-	QString filePath = QFileDialog::getOpenFileName(this,
-		QString::fromLocal8Bit("打开文件"), DEFAULT_PATH, tr("XML (*.xml)"));
-	if (filePath != NULL && !filePaths.contains(filePath, Qt::CaseSensitive)) {
-		//读取文件内容，解析后加载到plotTab和editTab
-	}
-	else if (filePaths.contains(filePath, Qt::CaseSensitive)) {
-		//将焦点跳转到相同路径的tab
-		int index = filePaths.indexOf(filePath);
-		plotTab->setCurrentIndex(index);
-		editTab->setCurrentIndex(index);
-	}
-	if (plotTab->count() == 1) {
+	if (!tabNotEmpty()) {
 		visionUi.actionSave->setEnabled(true);
 		visionUi.actionSaveAll->setEnabled(true);
 		visionUi.actionSaveAs->setEnabled(true);
 		visionUi.actionClose->setEnabled(true);
-		visionUi.actionCopy->setEnabled(true);
-		visionUi.actionCut->setEnabled(true);
-		visionUi.actionDelete->setEnabled(true);
-		visionUi.actionPaste->setEnabled(true);
-		visionUi.actionRedo->setEnabled(true);
-		visionUi.actionUndo->setEnabled(true);
+		visionUi.actionGetCode->setEnabled(true);
+	}
+	int index = plotTab->count();
+	QString defaultName = "#untitled@" + QString::number(index);
+	PlotPad* newPad = new PlotPad(new QGraphicsScene());
+	plots->append(newPad);
+	plotTab->addTab(newPad, defaultName);
+	plotTab->setCurrentIndex(index);
+	SmartEdit* newEdit = new SmartEdit();
+	edits->append(newEdit);
+	editTab->addTab(newEdit, defaultName);
+	editTab->setCurrentIndex(index);
+	newPad->edit = newEdit;
+	newPad->pathLabel = curNodePathLabel;
+	curNodePathLabel->setElidedText(newPad->getNodesPath());
+	if (curNodePathLabel->isHidden())curNodePathLabel->show();
+	//以下待补充
+	filePaths.append("");
+}
+/*打开文件*/
+void Vision::Open() {
+	if (!tabNotEmpty()) {
+		visionUi.actionSave->setEnabled(true);
+		visionUi.actionSaveAll->setEnabled(true);
+		visionUi.actionSaveAs->setEnabled(true);
+		visionUi.actionClose->setEnabled(true);
+		visionUi.actionGetCode->setEnabled(true);
+	}
+	QString filePath = QFileDialog::getOpenFileName(this,
+		QString::fromLocal8Bit("打开文件"), DEFAULT_PATH, tr("XML (*.xml)"));
+	if (filePath != "" ) {
+		if (filePaths.contains(filePath, Qt::CaseSensitive)) {//将焦点跳转到相同路径的tab
+			int index = filePaths.indexOf(filePath);
+			plotTab->setCurrentIndex(index);
+			editTab->setCurrentIndex(index);
+		}
+		else {//读取文件内容，解析后加载到plotTab和editTab
+
+			statusBar()->showMessage(QString::fromLocal8Bit("打开文件") + filePath, 3000);
+		}
 	}
 }
 /*保存文件*/
-void Vision::Save() {
-	//存入txt
+void Vision::Save() { //存入txt
 	if (plotTab->count() > 0) {
-		//QRegExp rx("&untitled@\S*");		
+		//QRegExp rx("&untitled@\S*");	
 		int index = editTab->currentIndex();
 		QString filePath = filePaths.at(index);
 		if (filePath.isEmpty()) {
@@ -272,7 +280,7 @@ void Vision::Save() {
 		QString text = edits->at(index)->toPlainText();
 		out << text;
 		file.close();
-		visionUi.statusBar->showMessage(QString::fromLocal8Bit("成功保存至") + filePath, 3000);
+		statusBar()->showMessage(QString::fromLocal8Bit("成功保存至") + filePath, 3000);
 	}
 	//存XML
 }
@@ -295,7 +303,7 @@ void Vision::SaveAll() {
 			out << edits->at(i)->toPlainText();
 			file.close();
 		}
-		visionUi.statusBar->showMessage(QString::fromLocal8Bit("全部保存成功"), 3000);
+		statusBar()->showMessage(QString::fromLocal8Bit("全部保存成功"), 3000);
 	}
 }
 /*导出，另存为*/
@@ -332,28 +340,19 @@ void Vision::Close() {
 		filePaths.removeAt(index);
 		plots->removeAt(index);
 		edits->removeAt(index);
-		if (plots->count() == 0) {
+		if (!tabNotEmpty()) {
 			visionUi.actionSave->setEnabled(false);
 			visionUi.actionSaveAll->setEnabled(false);
 			visionUi.actionSaveAs->setEnabled(false);
 			visionUi.actionClose->setEnabled(false);
-			visionUi.actionCopy->setEnabled(false);
-			visionUi.actionCut->setEnabled(false);
-			visionUi.actionDelete->setEnabled(false);
-			visionUi.actionPaste->setEnabled(false);
-			visionUi.actionRedo->setEnabled(false);
-			visionUi.actionUndo->setEnabled(false);
+			visionUi.actionGetCode->setEnabled(false);
 		}
 	}
 }
 /*edit和plot绑定*/
 void Vision::TabSyn_EditFollowPad(int index) {
-	if (index >= 0) {
-		editTab->setCurrentIndex(index);
-	}
+	if (index >= 0) { editTab->setCurrentIndex(index); }
 }
 void Vision::TabSyn_PadFollowEdit(int index) {
-	if (index >= 0) {
-		plotTab->setCurrentIndex(index);
-	}
+	if (index >= 0) { plotTab->setCurrentIndex(index); }
 }
