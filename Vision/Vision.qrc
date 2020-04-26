@@ -23,7 +23,6 @@
         <file>Resources/icon/BackLevel.png</file>
         <file>Resources/icon/class.png</file>
         <file>Resources/icon/do_while.png</file>
-        <file>Resources/icon/empty.png</file>
         <file>Resources/icon/enum.png</file>
         <file>Resources/icon/for.png</file>
         <file>Resources/icon/func.png</file>
@@ -33,6 +32,7 @@
         <file>Resources/icon/switch.png</file>
         <file>Resources/icon/try_catch.png</file>
         <file>Resources/icon/union.png</file>
+        <file>Resources/icon/untyped.png</file>
         <file>Resources/icon/while.png</file>
         <file>Resources/qss/completer.qss</file>
         <file>Resources/qss/global.qss</file>

@@ -23,7 +23,7 @@ protected:
 
 private:
 	Ui::VisionClass visionUi;
-	QSplitter* globalSplitter;//×óÓÒÊúÖ±·Ö¸îÆ÷
+	QSplitter* globalSplitter;
 	ToolKit* toolKit;
 	QTabWidget* plotTab, * editTab;
 	QTimer* timer;

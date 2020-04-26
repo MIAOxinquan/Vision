@@ -64,7 +64,6 @@ void ToolKit::mouseMoveEvent(QMouseEvent* event)
 
 				QMimeData* mimeData = new QMimeData();//拖拽产生的临时数据
 				QString mimeText = toolPressed->text();
-				if ("empty" == mimeText)mimeText = "";
 				mimeData->setText(mimeText);//如果文本为空，则代码框默认接收不到任何信息，显示为禁止标志
 				drag->setMimeData(mimeData);
 				auto action = drag->exec(Qt::CopyAction | Qt::MoveAction);

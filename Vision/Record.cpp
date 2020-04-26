@@ -1,4 +1,4 @@
-#include "RecordObject.h"
+#include "Record.h"
 #include "PlotPad.h"
 
 /*AddArrowLine*/
@@ -30,62 +30,62 @@ DeleteBlock::DeleteBlock(Block* block, QList<Block*>* belongingList) {
 	this->belongingList = belongingList;
 }
 
-/*UndoRedoStack*/
-UndoRedoStack::UndoRedoStack(PlotPad* pad)
-	: undoList(new QList<QList<RecordObject*>*>())
-	, redoList(new QList<QList<RecordObject*>*>())
+/*RecordStack*/
+RecordStack::RecordStack(PlotPad* pad)
+	: undoList(new QList<QList<Record*>*>())
+	, redoList(new QList<QList<Record*>*>())
 {
 	this->pad = pad;
 }
 
-UndoRedoStack::~UndoRedoStack()
+RecordStack::~RecordStack()
 {
 
 }
 
-void UndoRedoStack::InDo(RecordObject* record)
+void RecordStack::InDo(Record* record)
 {
 	if (undoList->size() == MAX_REDO_STEP)//如果已经满了，则删除第一个并处理
 	{
-		QList<RecordObject*>* handleRecords = undoList->front();
-		redoList->pop_front();
+		QList<Record*>* handleRecords = undoList->front();
+		undoList->pop_front();
 		delayedHandleUndoRecord(handleRecords);
 	}
-	QList<RecordObject*>* records = new QList<RecordObject*>();
+	QList<Record*>* records = new QList<Record*>();
 	records->push_back(record);
 	undoList->push_back(records);
 }
 
-void UndoRedoStack::InDo(QList<RecordObject*>* records)
+void RecordStack::InDo(QList<Record*>* records)
 {
 	if (undoList->size() == MAX_REDO_STEP)//如果已经满了，则删除第一个并处理
 	{
-		QList<RecordObject*>* handleRecords = undoList->front();
-		redoList->pop_front();
+		QList<Record*>* handleRecords = undoList->front();
+		undoList->pop_front();
 		delayedHandleUndoRecord(handleRecords);
 	}
 	undoList->push_back(records);
 }
 
-void UndoRedoStack::Do(RecordObject* record)
+void RecordStack::Do(Record* record)
 {
 	InDo(record);
 	//清空redoList
-	clearReduList();
+	clearRedoList();
 }
 
-void UndoRedoStack::Do(QList<RecordObject*>* records)
+void RecordStack::Do(QList<Record*>* records)
 {
 	InDo(records);
 	//清空redoList
-	clearReduList();
+	clearRedoList();
 }
 
-void UndoRedoStack::clearReduList() {
+void RecordStack::clearRedoList() {
 	while (!redoList->empty()) {
-		QList<RecordObject*>* records = redoList->back(); redoList->pop_back();
+		QList<Record*>* records = redoList->back(); redoList->pop_back();
 		while (!records->empty()) {
-			RecordObject* record = records->back(); records->pop_back();
+			Record* record = records->back(); records->pop_back();
 			delayedHandleRedoRecord(record);
 			delete record;
 		}
@@ -93,9 +93,9 @@ void UndoRedoStack::clearReduList() {
 	}
 }
 
-void UndoRedoStack::Redo() {
+void RecordStack::Redo() {
 	if (redoList->empty()) return;
-	QList<RecordObject*>* records = redoList->back(); redoList->pop_back();
+	QList<Record*>* records = redoList->back(); redoList->pop_back();
 	for (int i = records->size() - 1; i >= 0; --i) {
 		QString recordName = records->at(i)->className();
 		if (recordName == "AddArrowLine") {
@@ -127,9 +127,9 @@ void UndoRedoStack::Redo() {
 		else if (recordName == "DeleteArrowLine") {
 			DeleteArrowLine* concreteRecord = (DeleteArrowLine*)records->at(i);
 			if (concreteRecord->arrowLine->fromBlock)
-				concreteRecord->arrowLine->fromBlock->outArrow = NULL;
+				concreteRecord->arrowLine->fromBlock->outArrow = Q_NULLPTR;
 			if (concreteRecord->arrowLine->toBlock)
-				concreteRecord->arrowLine->toBlock->inArrow = NULL;
+				concreteRecord->arrowLine->toBlock->inArrow = Q_NULLPTR;
 			pad->scene->removeItem(concreteRecord->arrowLine);
 		}
 		else if (recordName == "DeleteBlock") {
@@ -152,23 +152,23 @@ void UndoRedoStack::Redo() {
 	InDo(records);
 }
 
-void UndoRedoStack::Undo2Redu(QList<RecordObject*>* records) {
+void RecordStack::Undo2Redu(QList<Record*>* records) {
 	if (redoList->size() < MAX_REDO_STEP) {//应该是一定会满足的
 		redoList->push_back(records);
 	}
 }
 
-void UndoRedoStack::Undo() {
+void RecordStack::Undo() {
 	if (undoList->empty()) return;
-	QList<RecordObject*>* records = undoList->back();
+	QList<Record*>* records = undoList->back();
 	undoList->pop_back();
 	//处理undo事务
 	for (int i = records->size() - 1; i >= 0; --i) {
 		QString recordName = records->at(i)->className();
 		if (recordName == "AddArrowLine") {
 			AddArrowLine* concreteRecord = (AddArrowLine*)records->at(i);
-			concreteRecord->arrowLine->fromBlock->outArrow = NULL;
-			concreteRecord->arrowLine->toBlock->inArrow = NULL;
+			concreteRecord->arrowLine->fromBlock->outArrow = Q_NULLPTR;
+			concreteRecord->arrowLine->toBlock->inArrow = Q_NULLPTR;
 			pad->scene->removeItem(concreteRecord->arrowLine);
 			//delete concreteRecord->arrowLine;//后面要修改，因为要Redo，所以此处不能删
 		}
@@ -176,12 +176,12 @@ void UndoRedoStack::Undo() {
 			AddBlock* concreteRecord = (AddBlock*)records->at(i);
 			pad->scene->removeItem(concreteRecord->block);
 			if (concreteRecord->block->inArrow) {//应该不会执行
-				concreteRecord->block->inArrow->fromBlock->outArrow = NULL;
+				concreteRecord->block->inArrow->fromBlock->outArrow = Q_NULLPTR;
 				pad->scene->removeItem(concreteRecord->block->inArrow);
 				//delete concreteRecord->block->inArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
 			if (concreteRecord->block->outArrow) {//应该不会执行
-				concreteRecord->block->outArrow->toBlock->inArrow = NULL;
+				concreteRecord->block->outArrow->toBlock->inArrow = Q_NULLPTR;
 				pad->scene->removeItem(concreteRecord->block->outArrow);
 				//delete concreteRecord->block->outArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
@@ -216,7 +216,7 @@ void UndoRedoStack::Undo() {
 	Undo2Redu(records);
 }
 
-void UndoRedoStack::delayedHandleUndoRecord(RecordObject* record) {
+void RecordStack::delayedHandleUndoRecord(Record* record) {
 	QString recordName = record->className();
 	if (recordName == "AddArrowLine") {
 		AddArrowLine* concreteRecord = (AddArrowLine*)record;
@@ -247,13 +247,13 @@ void UndoRedoStack::delayedHandleUndoRecord(RecordObject* record) {
 	}
 }
 
-void UndoRedoStack::delayedHandleUndoRecord(QList<RecordObject*>* records) {
+void RecordStack::delayedHandleUndoRecord(QList<Record*>* records) {
 	if (!records)return;
 	for (int i = 0; i < records->size(); ++i)
 		delayedHandleUndoRecord(records->at(i));
 }
 
-void UndoRedoStack::delayedHandleRedoRecord(RecordObject* record) {
+void RecordStack::delayedHandleRedoRecord(Record* record) {
 	QString recordName = record->className();
 	if (recordName == "AddArrowLine") {
 		AddArrowLine* concreteRecord = (AddArrowLine*)record;
@@ -286,7 +286,7 @@ void UndoRedoStack::delayedHandleRedoRecord(RecordObject* record) {
 	}
 }
 
-void UndoRedoStack::delayedHandleRedoRecord(QList<RecordObject*>* records) {
+void RecordStack::delayedHandleRedoRecord(QList<Record*>* records) {
 	if (!records)return;
 	for (int i = 0; i < records->size(); ++i)
 		delayedHandleUndoRecord(records->at(i));

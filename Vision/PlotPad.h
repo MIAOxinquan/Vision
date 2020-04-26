@@ -5,13 +5,13 @@
 #include <QGraphicsView>
 class SmartEdit;
 class ArrowLine;
-class UndoRedoStack;
+class RecordStack;
 /*TipLabel*/
 class TipLabel :public QLabel {
-    Q_OBJECT
 public:
-    explicit TipLabel();
-    void setElidedText(QString fullText);
+    TipLabel();
+    QString blockPath;
+    void setElidedText();
 private:
     void enterEvent(QEvent* event);
     void leaveEvent(QEvent* event);
@@ -28,15 +28,14 @@ public:
     Block(int x, int y, QString str);
     //~Block();
     int x, y, w, h, id;
-    QString type;
-    QString content;
+    QString type, blockText, content;
     ArrowLine* inArrow, * outArrow;
     Block* childRoot;
     QList<Block*>* childrenBlock;
 
+    //void deleteSelf();
     QString className()override;
     QRectF boundingRect() const override;
-    void deleteSelf();
 protected:
     //键盘事件
     /*void keyPressEvent(QKeyEvent* event) override;
@@ -58,7 +57,7 @@ public:
 
     QString className()override;
     void adjust();
-    void deleteSelf();
+    //void deleteSelf();
 protected:
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
@@ -83,20 +82,24 @@ public:
     PlotPad(QGraphicsScene* scene);
 
     int indexTotal;
+    QString title;
     QGraphicsScene* scene;
     SmartEdit* edit;
     TipLabel* pathLabel;
     Block* root;
     QStack<QList<Block*>*> blockStack; //blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
-    UndoRedoStack* undoRedoStack;
-    QStringList nodesOnPath;
+    RecordStack* recordStack;
+    QList<Block*>*blockOnPath;
 
     void undo();
     void redo();
+    void removeItem();
+    void removeBlock(Block* block);
+    void removeArrowLine(ArrowLine* arrowLine);
     void backLevel();
-    void deleteItem();
+    //void deleteItem();
     void setRoot(Block* root);
-    QString getNodesPath();
+    QString getBlockPath();
 protected:
     void dropEvent(QDropEvent* event)override;
     void dragEnterEvent(QDragEnterEvent* event)override;

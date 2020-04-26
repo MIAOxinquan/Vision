@@ -5,13 +5,13 @@ class Block;
 class ArrowLine;
 class PlotPad;
 
-class RecordObject
+class Record
 {
 public:
 	virtual QString className() = 0;
 };
 
-class AddArrowLine:public RecordObject
+class AddArrowLine:public Record
 {
 public:
 	virtual QString className();
@@ -20,7 +20,7 @@ public:
 };
 
 
-class AddBlock:public RecordObject
+class AddBlock:public Record
 {
 public:
 	virtual QString className();
@@ -29,7 +29,7 @@ public:
 	AddBlock(Block* block, QList<Block*>* belongingList);
 };
 
-class MoveBlock :public RecordObject
+class MoveBlock :public Record
 {
 public:
 	virtual QString className();
@@ -38,7 +38,7 @@ public:
 	MoveBlock(Block* block);// fromPoint和toPoint怎么处理
 };
 
-class DeleteArrowLine :public RecordObject
+class DeleteArrowLine :public Record
 {
 public:
 	virtual QString className();
@@ -46,7 +46,7 @@ public:
 	DeleteArrowLine(ArrowLine* arrowLine);
 };
 
-class DeleteBlock :public RecordObject
+class DeleteBlock :public Record
 {
 public:
 	virtual QString className();
@@ -56,31 +56,31 @@ public:
 };
 
 
-class UndoRedoStack
+class RecordStack
 {
 private:
 	const int  MAX_REDO_STEP = 30;//最大重做数量
 	PlotPad* pad;
-	QList<QList<RecordObject*>*>* undoList;
-	QList<QList<RecordObject*>*>* redoList;
+	QList<QList<Record*>*>* undoList;
+	QList<QList<Record*>*>* redoList;
 
-	void delayedHandleUndoRecord(RecordObject* record);
-	void delayedHandleUndoRecord(QList<RecordObject*>* records);
-	void delayedHandleRedoRecord(RecordObject* record);
-	void delayedHandleRedoRecord(QList<RecordObject*>* records);
+	void delayedHandleUndoRecord(Record* record);
+	void delayedHandleUndoRecord(QList<Record*>* records);
+	void delayedHandleRedoRecord(Record* record);
+	void delayedHandleRedoRecord(QList<Record*>* records);
 
-	void Undo2Redu(QList<RecordObject*>* records);
-	void clearReduList();
+	void Undo2Redu(QList<Record*>* records);
+	void clearRedoList();
 
-	void InDo(RecordObject* record);
-	void InDo(QList<RecordObject*>* records);
+	void InDo(Record* record);
+	void InDo(QList<Record*>* records);
 
 public:
 	void Redo();
 	void Undo();
-	void Do(RecordObject* record);
-	void Do(QList<RecordObject*>* records);
+	void Do(Record* record);
+	void Do(QList<Record*>* records);
 	
-	UndoRedoStack(PlotPad* pad);
-	virtual ~UndoRedoStack();
+	RecordStack(PlotPad* pad);
+	virtual ~RecordStack();
 };

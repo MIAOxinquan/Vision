@@ -1,25 +1,25 @@
 #include "global.h"
 #include "PlotPad.h"
 #include "SmartEdit.h"
-#include "RecordObject.h"
+#include "Record.h"
 
 /*TipLabel*/
 TipLabel::TipLabel()
 	:QLabel()
 {
-	setMinimumWidth(120);
-	setMaximumWidth(420);
+	setMaximumWidth(400);
 }
-void TipLabel::setElidedText(QString fullText) {
+void TipLabel::setElidedText() {
 	QFontMetrics fontMtc = fontMetrics();
-	int showWidth = width();
-	QString elidedText = fontMtc.elidedText(fullText, Qt::ElideRight, showWidth);//返回一个带有省略号的字符串
+	int pathStrWidth = fontMtc.width(blockPath), maxWidth = maximumWidth() - 20
+		, showWidth = pathStrWidth <= maxWidth ? pathStrWidth : maxWidth;
+	QString elidedText = fontMtc.elidedText(blockPath, Qt::ElideRight, showWidth);//返回一个带有省略号的字符串
 	setText(elidedText);
 }
 void TipLabel::enterEvent(QEvent* event) {
 	if (QEvent::Enter == event->type()) {
 		int offsetX = width() / 2, offsetY = height() * 1.5;
-		QToolTip::showText(QCursor::pos() - QPoint(offsetX, offsetY), text(), this);
+		QToolTip::showText(QCursor::pos() - QPoint(offsetX, offsetY), blockPath, this);
 	}
 }
 void TipLabel::leaveEvent(QEvent* event) {
@@ -37,9 +37,9 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	, scene(Q_NULLPTR)
 	, edit(Q_NULLPTR)
 	, lastLine(Q_NULLPTR)
-	, pathLabel(Q_NULLPTR)
 	, root(Q_NULLPTR)
-	, undoRedoStack(new UndoRedoStack(this))
+	, blockOnPath(new QList<Block*>)
+	, recordStack(new RecordStack(this))
 	, ctrlPressed(false)
 	, leftBtnPressed(false)
 	, indexTotal(-1)
@@ -59,8 +59,7 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 }
 
 
-void PlotPad::dropEvent(QDropEvent* event)
-{
+void PlotPad::dropEvent(QDropEvent* event) {
 	setFocus();
 	QString type = event->mimeData()->text();//获取text
 	QPoint ePos = event->pos();//获取位置 --> PlotPad内的位置
@@ -68,39 +67,50 @@ void PlotPad::dropEvent(QDropEvent* event)
 	if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
 	Block* oldBlock = (Block*)itemAtPos;
 	Block* newBlock = new Block(ePos.rx() , ePos.ry() , type);
+	newBlock->blockText = type;
 	indexTotal++;
 	newBlock->id = indexTotal;
 	scene->addItem(newBlock);
 	newBlock->setFocus();
-	if (oldBlock) // oldBlock != NULL
+	if (oldBlock) // oldBlock != Q_NULLPTR
 	{
 		qreal maxY = -1;
-		for (int i = 0; i < oldBlock->childrenBlock->size(); ++i)
-			if (oldBlock->childrenBlock->at(i)->pos().y() > maxY)
-				maxY = oldBlock->childrenBlock->at(i)->pos().y();
-		oldBlock->childrenBlock->append(newBlock);
-		undoRedoStack->Do(new AddBlock(newBlock, oldBlock->childrenBlock));
+		QList<Block*>* innerBlock = oldBlock->childrenBlock;
+		int innerCount = innerBlock->count();
+		for (int i = 0; i < innerCount; ++i)
+			if (innerBlock->at(i)->pos().y() > maxY)
+				maxY = innerBlock->at(i)->pos().y();
+		innerBlock->append(newBlock);
+		recordStack->Do(new AddBlock(newBlock, oldBlock->childrenBlock));
 		newBlock->setPos(200, maxY + 100);
 		newBlock->hide();
 	}
 	else {
-		if (0 == blockStack.top()->count()) {
+		QList<Record*>* records = new QList<Record*>();
+		QList<Block*>* topBlock = blockStack.top();
+		topBlock->push_back(newBlock);
+		records->push_back(new AddBlock(newBlock, blockStack.top()));
+		if (topBlock->count()==1) {
 			setRoot(newBlock);
-			if (pathLabel)
-				pathLabel->setElidedText(getNodesPath());
+			if (newBlock->inArrow) {
+				scene->removeItem(newBlock->inArrow);
+				newBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
+				records->push_back(new DeleteArrowLine(newBlock->inArrow));
+				newBlock->inArrow = Q_NULLPTR;
+			}
 		}
 		else {
-			Block* temp = root;
-			while (temp->outArrow) {
-				temp = temp->outArrow->toBlock;
+			Block* tempBlock = root;
+			while (tempBlock->outArrow) {
+				tempBlock = tempBlock->outArrow->toBlock;
 			}
-			ArrowLine* newArrow = new ArrowLine(temp, newBlock, QPointF(0, 0), QPointF(0, 0));
-			temp->outArrow = newArrow;
+			ArrowLine* newArrow = new ArrowLine(tempBlock, newBlock, QPointF(0, 0), QPointF(0, 0));
+			tempBlock->outArrow = newArrow;
 			newBlock->inArrow = newArrow;
 			scene->addItem(newArrow);
+			records->push_back(new AddArrowLine(newArrow));
 		}
-		blockStack.top()->push_back(newBlock);
-		undoRedoStack->Do(new AddBlock(newBlock, blockStack.top()));
+		recordStack->Do(records);
 	}
 	QGraphicsView::dropEvent(event);
 }
@@ -158,29 +168,36 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 {
 	if (e->button() == Qt::LeftButton)
 	{
-		Item* pIt = (Item*)scene->itemAt(QPointF(e->pos()), QTransform());
-		if (pIt && pIt->className() == "ArrowLine") return;
-		Block* it = (Block*)pIt;
-		if (!it)return; // 如果it为NULL，则什么都不做
-		QList<Block*>* topList = this->blockStack.top();
-		for (int i = 0; i < topList->size(); ++i)// 隐藏父亲节点同层节点
-		{
-			topList->at(i)->hide();
-			if (topList->at(i) && topList->at(i)->inArrow && topList->at(i)->inArrow->isVisible())
-				topList->at(i)->inArrow->hide();
-			if (topList->at(i) && topList->at(i)->outArrow && topList->at(i)->outArrow->isVisible())
-				topList->at(i)->outArrow->hide();
+		Item* itemAtPos = (Item*)scene->itemAt(QPointF(e->pos()), QTransform());
+		if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
+		Block* blockAtPos = (Block*)itemAtPos;
+		if (!blockAtPos)return; // 如果it为Q_NULLPTR，则什么都不做
+		QList<Block*>* topBlock = blockStack.top();
+		for (int i = 0; i < topBlock->count(); ++i) {// 隐藏父亲节点同层节点
+			topBlock->at(i)->hide();
+			if (topBlock->at(i) && topBlock->at(i)->inArrow && topBlock->at(i)->inArrow->isVisible())
+				topBlock->at(i)->inArrow->hide();
+			if (topBlock->at(i) && topBlock->at(i)->outArrow && topBlock->at(i)->outArrow->isVisible())
+				topBlock->at(i)->outArrow->hide();
 		}
-		for (int i = 0; i < it->childrenBlock->size(); ++i)// 显示子层节点
-		{
-			it->childrenBlock->at(i)->show();
-			if (it->childrenBlock->at(i)->inArrow && !it->childrenBlock->at(i)->inArrow->isVisible())
-				it->childrenBlock->at(i)->inArrow->show();
-			if (it->childrenBlock->at(i)->outArrow && !it->childrenBlock->at(i)->outArrow->isVisible())
-				it->childrenBlock->at(i)->outArrow->show();
+		for (int i = 0; i < blockAtPos->childrenBlock->count(); ++i) {// 显示子层节点
+			blockAtPos->childrenBlock->at(i)->show();
+			if (blockAtPos->childrenBlock->at(i)->inArrow && !blockAtPos->childrenBlock->at(i)->inArrow->isVisible())
+				blockAtPos->childrenBlock->at(i)->inArrow->show();
+			if (blockAtPos->childrenBlock->at(i)->outArrow && !blockAtPos->childrenBlock->at(i)->outArrow->isVisible())
+				blockAtPos->childrenBlock->at(i)->outArrow->show();
 		}
-		blockStack.push(it->childrenBlock);
-		nodesOnPath.append(it->type);
+		if (blockAtPos->childrenBlock) {
+			blockStack.push(blockAtPos->childrenBlock);
+		}
+		else {
+			blockStack.push(new QList<Block*>());
+		}
+		blockOnPath->append(blockAtPos);
+		if (pathLabel) {
+			pathLabel->blockPath = getBlockPath();
+			pathLabel->setElidedText();
+		}
 	}
 	if (e->button() == Qt::RightButton) {
 		if (scene->focusItem()) {
@@ -188,92 +205,161 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 			if ("Block" == focusedItem->className()) {
 				Block* focusedBlock = (Block*)focusedItem;
 				setRoot(focusedBlock);
+				if (focusedBlock->inArrow) {
+					scene->removeItem(focusedBlock->inArrow);
+					focusedBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
+					recordStack->Do(new DeleteArrowLine(focusedBlock->inArrow));
+					focusedBlock->inArrow = Q_NULLPTR;
+				}
 			}
 		}
 	}
 }
 
-void PlotPad::backLevel()
-{
-	if (blockStack.size() > 1)
-	{
-		QList<Block*>* topList = this->blockStack.top();
-		for (int i = 0; i < topList->size(); ++i)
-		{
-			topList->at(i)->hide();
-			
-			if (topList->at(i) && topList->at(i)->inArrow && topList->at(i)->inArrow->isVisible())
-				topList->at(i)->inArrow->hide();
-			if (topList->at(i) && topList->at(i)->outArrow && topList->at(i)->outArrow->isVisible())
-				topList->at(i)->outArrow->hide();
+void PlotPad::backLevel() {
+	if (blockStack.count() > 1)	{
+		QList<Block*>* topBlock = blockStack.top();
+		for (int i = 0; i < topBlock->size(); ++i) {
+			topBlock->at(i)->hide();
+			if (topBlock->at(i) && topBlock->at(i)->inArrow && topBlock->at(i)->inArrow->isVisible())
+				topBlock->at(i)->inArrow->hide();
+			if (topBlock->at(i) && topBlock->at(i)->outArrow && topBlock->at(i)->outArrow->isVisible())
+				topBlock->at(i)->outArrow->hide();
 		}
-
 		blockStack.pop();
-		nodesOnPath.removeLast();
-		topList = this->blockStack.top();
-		for (int i = 0; i < topList->size(); ++i)
-		{
-			topList->at(i)->show();
-			if (topList->at(i) && topList->at(i)->inArrow && !topList->at(i)->inArrow->isVisible())
-				topList->at(i)->inArrow->show();
-			if (topList->at(i) && topList->at(i)->outArrow && !topList->at(i)->outArrow->isVisible())
-				topList->at(i)->outArrow->show();
+		blockOnPath->removeLast();
+		topBlock = this->blockStack.top();
+		for (int i = 0; i < topBlock->size(); ++i) {
+			topBlock->at(i)->show();
+			if (topBlock->at(i) && topBlock->at(i)->inArrow && !topBlock->at(i)->inArrow->isVisible())
+				topBlock->at(i)->inArrow->show();
+			if (topBlock->at(i) && topBlock->at(i)->outArrow && !topBlock->at(i)->outArrow->isVisible())
+				topBlock->at(i)->outArrow->show();
 		}
+		if (pathLabel) {
+			pathLabel->blockPath = getBlockPath();
+			pathLabel->setElidedText();
+		}
+	}
+}
+void PlotPad::removeItem()
+{
+	Item* focusedItem = (Item*)this->scene->focusItem();
+	if (!focusedItem) return;
+	if (focusedItem->className() == "Block") {
+		removeBlock((Block*)focusedItem);
+	}
+	else {
+		removeArrowLine((ArrowLine*)focusedItem);
+	}
+}
+// 单纯地只remove当前Block，而不管他的ArrowLine，ArrowLine在Block之前移除
+void PlotPad::removeBlock(Block* block) {
+	QList<Block*>* topBlock = blockStack.top();
+	topBlock->removeOne(block);
+	int topCount = topBlock->count();
+	QList<Record*>* records = new QList<Record*>();
+	if (block == root) {
+		if (0 == topCount)
+			root = Q_NULLPTR;
+		else {
+			Block* topFirst = topBlock->first();
+			setRoot(topFirst);
+			if (topFirst->inArrow) {
+				scene->removeItem(topFirst->inArrow);
+				topFirst->inArrow->fromBlock->outArrow = Q_NULLPTR;
+				records->push_back(new DeleteArrowLine(topFirst->inArrow));
+				topFirst->inArrow = Q_NULLPTR;
+			}
+		}
+	}
+	if (block->inArrow)
+	{
+		scene->removeItem(block->inArrow);
+		block->inArrow->fromBlock->outArrow = Q_NULLPTR;//箭头的来源Block的outArrow应该置为空
+		records->push_back(new DeleteArrowLine(block->inArrow));
+		block->inArrow = Q_NULLPTR; // 要不要这一步?
+	}
+	if (block->outArrow)
+	{
+		scene->removeItem(block->outArrow);
+		block->outArrow->toBlock->inArrow = Q_NULLPTR;
+		records->push_back(new DeleteArrowLine(block->outArrow));
+		block->outArrow = Q_NULLPTR;
+	}
+	records->push_back(new DeleteBlock(block, blockStack.top()));
+	recordStack->Do(records); 
+	scene->removeItem(block);
+	for (int i = 0; i < block->childrenBlock->size(); ++i) {
+		if (block->childrenBlock->at(i)->inArrow)
+			scene->removeItem(block->childrenBlock->at(i)->inArrow);
+		removeBlock(block->childrenBlock->at(i));
 	}
 }
 
-//删除item
-void PlotPad::deleteItem() {
-	Item* focusedItem = (Item*)this->scene->focusItem();
-	if (focusedItem) {
-		if (focusedItem->className() == "Block") {
-			Block* focusedBlock = (Block*)focusedItem;
-			if (focusedBlock->inArrow) {
-				focusedBlock->inArrow->deleteSelf();
-			}
-			if (focusedBlock->outArrow) {
-				focusedBlock->outArrow->deleteSelf();
-			}
-			QList<Block*>* topBlock = blockStack.top();
-			blockStack.top()->removeOne(focusedBlock);
-			if (focusedBlock == root) {
-				if (0 == topBlock->count()) {
-					root = Q_NULLPTR;
-				}
-				else {
-					setRoot(topBlock->first());
-				}
-			}
-			focusedBlock->deleteSelf();
-		}
-		else {
-			ArrowLine* focusedArrow = (ArrowLine*)focusedItem;
-			focusedArrow->deleteSelf();
-		}
-		focusedItem = Q_NULLPTR;
-	}
+void PlotPad::removeArrowLine(ArrowLine* arrowLine) {
+	if (!arrowLine) return;
+	scene->removeItem(arrowLine);
+	arrowLine->toBlock->inArrow = Q_NULLPTR;
+	arrowLine->fromBlock->outArrow = Q_NULLPTR;
+	recordStack->Do(new DeleteArrowLine(arrowLine));
 }
+
+////删除item
+//void PlotPad::deleteItem() {
+//	Item* focusedItem = (Item*)this->scene->focusItem();
+//	if (focusedItem) {
+//		if (focusedItem->className() == "Block") {
+//			Block* focusedBlock = (Block*)focusedItem;
+//			if (focusedBlock->inArrow) {
+//				focusedBlock->inArrow->deleteSelf();
+//			}
+//			if (focusedBlock->outArrow) {
+//				focusedBlock->outArrow->deleteSelf();
+//			}
+//			QList<Block*>* topBlock = blockStack.top();
+//			blockStack.top()->removeOne(focusedBlock);
+//			if (focusedBlock == root) {
+//				if (0 == topBlock->count()) {
+//					root = Q_NULLPTR;
+//				}
+//				else {
+//					setRoot(topBlock->first());
+//				}
+//			}
+//			focusedBlock->deleteSelf();
+//		}
+//		else {
+//			ArrowLine* focusedArrow = (ArrowLine*)focusedItem;
+//			focusedArrow->deleteSelf();
+//		}
+//		focusedItem = Q_NULLPTR;
+//	}
+//}
 
 /*设置根节点*/
 void PlotPad::setRoot(Block* newRoot) {
-	if (root) {
-		root->type = root->type.right(root->type.length() - 1);
-		root->update();
+	if (1 == blockStack.count()) {
+		if (root) {
+			QString tempText = root->blockText;
+			root->blockText = tempText.right(tempText.length() - 2);
+			root->update();
+		}
 	}
-	if (newRoot->type.at(0) != '*'){
+	if (!newRoot->blockText.startsWith('*')) {
 		root = newRoot;
-		newRoot->type = "*" + newRoot->type;
+		newRoot->blockText = "* " + newRoot->blockText;
+		newRoot->update();
 	}
-	if (newRoot->inArrow)
-		newRoot->inArrow->deleteSelf();
-	newRoot->update();
+	//因为不确定inArrow是单独删除还是和其他动作一块做
+	//须严格在每次setRoot函数外部紧随删除inArrow
 }
 
-QString PlotPad::getNodesPath() {
-	QString nodesPath = "@PlotPad";
-	int Count = nodesOnPath.count();
+QString PlotPad::getBlockPath() {
+	QString nodesPath = title;
+	int Count = blockOnPath->count();
 	for (int i = 0; i < Count; i++) {
-		nodesPath += "//" + nodesOnPath.at(i);
+		nodesPath += ">>" + blockOnPath->at(i)->type;
 	}
 	return  nodesPath;
 }
@@ -292,7 +378,6 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 			if (fromItem && toItem
 				&& fromItem->className() == "Block"
 				&& toItem->className() == "Block") {
-				/*强约束*/
 				Block* endBlock = (Block*)toItem;
 				if (endBlock == root)return;
 				Block* startBlock = (Block*)fromItem;
@@ -300,32 +385,30 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 
 				if (!startBlock->outArrow
 					|| (startBlock->outArrow && startBlock->outArrow->toBlock != endBlock)) {
-					qDebug() << "drawArrow";
+					QList<Record*>* records = new QList<Record*>();
 					/*弱约束*/
 					if (startBlock->outArrow) {
 						startBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
 						scene->removeItem(startBlock->outArrow);
-						delete startBlock->outArrow;
+						records->push_back(new DeleteArrowLine(startBlock->outArrow));
 						startBlock->outArrow = Q_NULLPTR;
 					}
 					if (endBlock->inArrow) {
 						endBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
 						scene->removeItem(endBlock->inArrow);
-						delete endBlock->inArrow;
+						records->push_back(new DeleteArrowLine(endBlock->inArrow));
 						endBlock->inArrow = Q_NULLPTR;
 					}
 					/*强约束*/
 					if (endBlock->outArrow) {
-						int length = 0;
 						Block* temp = endBlock;
 						while (temp->outArrow && temp->outArrow->toBlock != endBlock) {
 							temp = temp->outArrow->toBlock;
-							length++;
 						}
 						if (temp == startBlock) {
 							endBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
 							scene->removeItem(endBlock->outArrow);
-							delete endBlock->outArrow;
+							records->push_back(new DeleteArrowLine(endBlock->outArrow));
 							endBlock->outArrow = Q_NULLPTR;
 						}
 					}
@@ -333,6 +416,8 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					startBlock->outArrow = newArrow;
 					endBlock->inArrow = newArrow;
 					scene->addItem(newArrow);
+					records->push_back(new AddArrowLine(newArrow));
+					recordStack->Do(records);
 					newArrow->setFocus();
 				}
 			}
@@ -340,8 +425,8 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 	}
 	QGraphicsView::mouseReleaseEvent(e);
 }
-void PlotPad::undo() { undoRedoStack->Undo(); }
-void PlotPad::redo() { undoRedoStack->Redo(); }
+void PlotPad::undo() { recordStack->Undo(); }
+void PlotPad::redo() { recordStack->Redo(); }
 
 /*Block*/
 Block::Block(int x, int y, QString type)
@@ -378,7 +463,7 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 		painter->setBrush(QBrush("lightBlue"));
 	}
 	painter->drawRoundedRect(boundingRect(), 12, 12);
-	painter->drawText(boundingRect(), Qt::AlignCenter, type);
+	painter->drawText(boundingRect(), Qt::AlignCenter, blockText);
 }
 
 
@@ -395,18 +480,17 @@ void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
 }
 
 //删除节点的子孙节点
-void Block::deleteSelf() {
-	if (childrenBlock) {
-		for (int i = 0; i < childrenBlock->count(); i++) {
-			if (childrenBlock->at(i)->inArrow) {
-				childrenBlock->at(i)->inArrow->deleteSelf();
-			}
-			childrenBlock->at(i)->deleteSelf();
-		}
-	}
-	delete this;
-}
-
+//void Block::deleteSelf() {
+//	if (childrenBlock) {
+//		for (int i = 0; i < childrenBlock->count(); i++) {
+//			if (childrenBlock->at(i)->inArrow) {
+//				childrenBlock->at(i)->inArrow->deleteSelf();
+//			}
+//			childrenBlock->at(i)->deleteSelf();
+//		}
+//	}
+//	delete this;
+//}
 
 /*ArrowLine*/
 static const double Pi = 3.14159265358979323846264338327950288419717;
@@ -534,8 +618,8 @@ void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)
 	QGraphicsItem::mouseMoveEvent(event);
 }
 
-void ArrowLine::deleteSelf() {
-	this->fromBlock->outArrow = Q_NULLPTR;
-	this->toBlock->inArrow = Q_NULLPTR;
-	delete this;
-}
+//void ArrowLine::deleteSelf() {
+//	this->fromBlock->outArrow = Q_NULLPTR;
+//	this->toBlock->inArrow = Q_NULLPTR;
+//	delete this;
+//}

@@ -9,18 +9,21 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.17
-1.ArrowLine now supports strong ajust;
-2.PlotPad now supports auto ArrowLine;
-3.remove Action "SelectAll", add Action "BackLevel";
-4.add class RecordObject with .h & .cpp;
-5.make logic of ToolBar Buttons more clear;
+version 3.22
+1.single record of operation Redo & Undo supported;
+2.multi records of operation Redo & Undo supported;
+3.TipLabel text now response immediately when blockPath of curPad changes or curPad changes;
+4.change toolKey name "empty" to "untyped", so with its icon;
+5.add class Record to record operation of redo & undo;
 
+*.Block Root change record not supported;
+*.Block's childRoot not suppoted;
+*.Block type will show children count if needed;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.17";
+const QString version = "3.22";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -87,17 +90,21 @@ Vision::Vision(QWidget* parent)
 	connect(editTab, SIGNAL(currentChanged(int)), this, SLOT(TabSyn_PadFollowEdit(int)));
 }
 Vision::~Vision() {
+	delete toolKit;	toolKit = Q_NULLPTR;
+	while (tabNotEmpty()) {
+		int lastIndex = editTab->count() - 1;
+		editTab->removeTab(lastIndex);
+		delete edits->at(lastIndex);
+		plotTab->removeTab(lastIndex);
+		delete plots->at(lastIndex);
+	}
+	delete edits; edits = Q_NULLPTR;
+	delete editTab;	editTab = Q_NULLPTR;
+	delete plots; plots = Q_NULLPTR;
+	delete plotTab;	plotTab = Q_NULLPTR;
 	timer->stop();	delete timer; timer = Q_NULLPTR;
 	delete curDateTimeLabel;	curDateTimeLabel = Q_NULLPTR;
 	delete curNodePathLabel; curNodePathLabel = Q_NULLPTR;
-	delete toolKit;	toolKit = Q_NULLPTR;
-	while (plotTab->count() > 0) {
-		int lastIndex = plotTab->count() - 1;
-		plotTab->removeTab(lastIndex);
-		editTab->removeTab(lastIndex);
-	}
-	delete plotTab;	plotTab = Q_NULLPTR;
-	delete editTab;	editTab = Q_NULLPTR;
 	delete globalSplitter; globalSplitter = Q_NULLPTR;
 }
 
@@ -135,7 +142,7 @@ void Vision::closeEvent(QCloseEvent* event) {
 }
 /*tab不空*/
 bool Vision::tabNotEmpty() {
-	return editTab->count() >= 0;
+	return editTab->count() > 0;
 }
 /*默认模式*/
 void Vision::Default() {
@@ -201,7 +208,7 @@ void Vision::BackLevel() {
 /*删除*/
 void Vision::Delete() {
 	if (tabNotEmpty())
-		plots->at(plotTab->currentIndex())->deleteItem();
+		plots->at(plotTab->currentIndex())->removeItem();
 }
 /*取码*/
 void Vision::getCode() {
@@ -220,10 +227,18 @@ void Vision::New() {
 		visionUi.actionSaveAs->setEnabled(true);
 		visionUi.actionClose->setEnabled(true);
 		visionUi.actionGetCode->setEnabled(true);
+		visionUi.actionUndo->setEnabled(true);
+		visionUi.actionRedo->setEnabled(true);
+		visionUi.actionCopy->setEnabled(true);
+		visionUi.actionPaste->setEnabled(true);
+		visionUi.actionCut->setEnabled(true);
+		visionUi.actionDelete->setEnabled(true);
+		visionUi.actionBackLevel->setEnabled(true);
 	}
 	int index = plotTab->count();
 	QString defaultName = "#untitled@" + QString::number(index);
 	PlotPad* newPad = new PlotPad(new QGraphicsScene());
+	newPad->title = defaultName;
 	plots->append(newPad);
 	plotTab->addTab(newPad, defaultName);
 	plotTab->setCurrentIndex(index);
@@ -233,7 +248,8 @@ void Vision::New() {
 	editTab->setCurrentIndex(index);
 	newPad->edit = newEdit;
 	newPad->pathLabel = curNodePathLabel;
-	curNodePathLabel->setElidedText(newPad->getNodesPath());
+	curNodePathLabel->blockPath = newPad->getBlockPath();
+	curNodePathLabel->setElidedText();
 	if (curNodePathLabel->isHidden())curNodePathLabel->show();
 	//以下待补充
 	filePaths.append("");
@@ -246,6 +262,13 @@ void Vision::Open() {
 		visionUi.actionSaveAs->setEnabled(true);
 		visionUi.actionClose->setEnabled(true);
 		visionUi.actionGetCode->setEnabled(true);
+		visionUi.actionUndo->setEnabled(true);
+		visionUi.actionRedo->setEnabled(true);
+		visionUi.actionCopy->setEnabled(true);
+		visionUi.actionPaste->setEnabled(true);
+		visionUi.actionCut->setEnabled(true);
+		visionUi.actionDelete->setEnabled(true);
+		visionUi.actionBackLevel->setEnabled(true);
 	}
 	QString filePath = QFileDialog::getOpenFileName(this,
 		QString::fromLocal8Bit("打开文件"), DEFAULT_PATH, tr("XML (*.xml)"));
@@ -312,7 +335,7 @@ void Vision::SaveAs() {
 }
 /*关闭文件*/
 void Vision::Close() {
-	if (plotTab->count() > 0) {
+	if (tabNotEmpty()) {
 		int index = editTab->currentIndex();
 		QString filePath = filePaths.at(index);
 		QFile file(filePath);
@@ -346,13 +369,26 @@ void Vision::Close() {
 			visionUi.actionSaveAs->setEnabled(false);
 			visionUi.actionClose->setEnabled(false);
 			visionUi.actionGetCode->setEnabled(false);
+			visionUi.actionUndo->setEnabled(false);
+			visionUi.actionRedo->setEnabled(false);
+			visionUi.actionCopy->setEnabled(false);
+			visionUi.actionPaste->setEnabled(false);
+			visionUi.actionCut->setEnabled(false);
+			visionUi.actionDelete->setEnabled(false);
+			visionUi.actionBackLevel->setEnabled(false);
 		}
 	}
 }
 /*edit和plot绑定*/
 void Vision::TabSyn_EditFollowPad(int index) {
-	if (index >= 0) { editTab->setCurrentIndex(index); }
+	if (index >= 0) { 
+		editTab->setCurrentIndex(index);
+		curNodePathLabel->blockPath = plots->at(index)->getBlockPath();
+		curNodePathLabel->setElidedText();
+	}
 }
 void Vision::TabSyn_PadFollowEdit(int index) {
-	if (index >= 0) { plotTab->setCurrentIndex(index); }
+	if (index >= 0) { 
+		plotTab->setCurrentIndex(index);
+	}
 }

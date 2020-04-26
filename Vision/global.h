@@ -40,7 +40,7 @@ const QStringList keys_cpp_normal = {
 };
 /*工具框关键字*/
 const QStringList toolKeys = {
-	"empty"/*0, empty block*/
+	"untyped"/*0, empty block*/
 	,"enum","union" ,"struct" ,"class"
 	/*1,-4, blue , class\n{\n\n}, struct\n{\n\n}, space func()\n{\n\n}*/
 	,"if"/*5, if()*/
