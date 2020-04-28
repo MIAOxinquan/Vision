@@ -9,12 +9,11 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.22
-1.single record of operation Redo & Undo supported;
-2.multi records of operation Redo & Undo supported;
-3.TipLabel text now response immediately when blockPath of curPad changes or curPad changes;
-4.change toolKey name "empty" to "untyped", so with its icon;
-5.add class Record to record operation of redo & undo;
+version 3.26
+1.add func getChildNodeContent(), getParentNodeContent(), showContent()^2 & getContent() in SmartEdit;
+2.SmartEdit content will change following PlotPad event;
+3.add (int)"level" in Block to support its display pattern;
+4.add func setChildRoot(Block*) to complete root system of PlotPad;
 
 *.Block Root change record not supported;
 *.Block's childRoot not suppoted;
@@ -23,7 +22,7 @@ version 3.22
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.22";
+const QString version = "3.26";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -180,13 +179,21 @@ void Vision::About() {
 }
 /*≥∑ªÿ*/
 void Vision::Undo() {
-	if(tabNotEmpty())
-		plots->at(plotTab->currentIndex())->undo();
+	if (tabNotEmpty()) {
+		int index = editTab->currentIndex();
+		plots->at(index)->undo();
+		plots->at(index)->update();
+		edits->at(index)->showContent(plots->at(index));
+	}
 }
 /*÷ÿ◊ˆ*/
 void Vision::Redo() {
-	if (tabNotEmpty())
-		plots->at(plotTab->currentIndex())->redo();
+	if (tabNotEmpty()) {
+		int index = editTab->currentIndex();
+		plots->at(index)->redo();
+		plots->at(index)->update();
+		edits->at(index)->showContent(plots->at(index));
+	}
 }
 /*ºÙ«–*/
 void Vision::Cut() {

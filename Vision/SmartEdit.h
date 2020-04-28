@@ -1,5 +1,6 @@
 #include <QtWidgets>
 #include <QByteArray>
+class Block;
 class PlotPad;
 /*
 ¸ßÁÁÆ÷;
@@ -23,7 +24,12 @@ public:
 
 	int getRowNumWidth();//ÐÐºÅ¿é¿í
 	void rowNumPlot(QPaintEvent* event);//ÐÐºÅÇø»æ»­
-	QString smartCore(QString key);
+	QString smartCore(QString key); 
+	QStringList getChildNodeContent();
+	QString getParentNodeContent();
+	void showContent(Block* block);
+	void showContent(PlotPad* plot);
+	QString getContent(Block* block);
 
 protected:
 	void resizeEvent(QResizeEvent* event)override;

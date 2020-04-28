@@ -5,6 +5,7 @@
 #include <QGraphicsView>
 class SmartEdit;
 class ArrowLine;
+class Record;
 class RecordStack;
 /*TipLabel*/
 class TipLabel :public QLabel {
@@ -21,6 +22,7 @@ class Item : public QGraphicsItem {
 public:
     Item();
     virtual QString className() = 0;
+    int  level;
 };
 /*Block*/
 class Block :public Item{
@@ -34,6 +36,7 @@ public:
     QList<Block*>* childrenBlock;
 
     //void deleteSelf();
+    void setChildRoot(Block* newChildRoot);
     QString className()override;
     QRectF boundingRect() const override;
 protected:
@@ -94,7 +97,7 @@ public:
     void undo();
     void redo();
     void removeItem();
-    void removeBlock(Block* block);
+    QList<Record*>* removeBlock(Block* block);
     void removeArrowLine(ArrowLine* arrowLine);
     void backLevel();
     //void deleteItem();

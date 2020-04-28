@@ -1,6 +1,7 @@
 #pragma once
 #include <QtCore>
 
+class Item;
 class Block;
 class ArrowLine;
 class PlotPad;
@@ -71,7 +72,7 @@ private:
 
 	void Undo2Redu(QList<Record*>* records);
 	void clearRedoList();
-
+	void levelShow(Item* item);
 	void InDo(Record* record);
 	void InDo(QList<Record*>* records);
 

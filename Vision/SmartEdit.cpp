@@ -322,10 +322,164 @@ void SmartEdit::rowContentPlot(/*int*/) {
 	}
 }
 /*  节点内容识别函数  */
+/*返回父节点的内容，其中子节点内容只保留id*/
+QString SmartEdit::getParentNodeContent()
+{
+	QString str = this->toPlainText();
+	QStringList childContents = getChildNodeContent();
+	int num = childContents.count();
+	for (int i = 0; i < num; i++) {
+		str.replace("<@" + childContents[i] + "@>", " ");
+	}
+	this->setPlainText(str);	//for test
+	return str;
+}
 
+/*  扫描代码并返回所有子节点内容  */
+QStringList SmartEdit::getChildNodeContent()
+{
+	QStringList nodesContents;
+	QString content = this->toPlainText();
+	QString str;
+	if (!content.isEmpty()) {
+		QStringList splist1 = content.split("#");	//第一次按#分割,1-max元素必为子节点内容+非子节点内容
+		int count1 = splist1.count();
+		if (count1 > 1) {
+			QStringList splist2;
+			QStringList splist3;
+			QRegExp rx("\\d+");
+			for (int i = 1; i < count1; i++) {
+				splist2 = splist1.at(i).split("<@");	//第二次按<@分割，理想为0元素是id，1元素是子节点内容
+				int count2 = splist2.count();
+				if (count2 == 1) {
+					nodesContents.append("BROKEN!");	//只有一个元素说明用户删除了标头<@，节点被破坏
+					continue;
+				}
+				else if (count2 > 2) {	//有多个标头
+					if (rx.exactMatch(splist2.at(0))) {		//只有第0个元素即#和第一个<@之间是数字节点才有可能保持不被破坏
+						str = splist2.at(1);
+						for (int j = 2; j < count2; j++) {
+							str = str + "<@" + splist2.at(j);
+						}
+						splist3 = str.split("@>");	//第三次按@>分割
+						if (splist3.count() == 1) {		//说明该节点的标尾被破坏
+							nodesContents.append("BROKEN!");
+							continue;
+						}
+						else {
+							str = splist3.at(0);
+							nodesContents.append(str);
+						}
+					}
+					else {
+						nodesContents.append("BROKEN!");
+						continue;
+					}
+				}
+				else if (count2 == 2) {
+					if (rx.exactMatch(splist2.at(0))) {
+						str = splist2.at(1);
+						splist3 = str.split("@>");
+						nodesContents.append(splist3.at(0));	//不管有几个@>,都以0号元素作为节点内容
+					}
+					else {
+						nodesContents.append("BROKEN!");
+						continue;
+					}
+				}
+				else {
+					nodesContents.append("BROKEN!");
+					continue;
+				}
+			}
+		}
+	}
+	return nodesContents;
+}
 
+/*加载节点内容*/
+void SmartEdit::showContent(Block* block)
+{
+	QString cont = block->content;
+	//QString global;
+	int index = cont.indexOf("#", 0);
+	int n = 0;
+	QRegExp rx("\\d");
+	Block* bl;
+	//QStringList idInContent;
+	while (index != -1)	//每次循环先获取#后面的数字，若其与对应子节点的id相等则将子节点content插入id之后
+	{
+		int i = index;
+		QString id = "";
+		while (rx.exactMatch(cont.at(i))) {	//获取id
+			id += cont.at(i);
+			i++;
+		}
+		//idInContent.append(id);
+		bl = block->childrenBlock->at(n);
+		if (id == bl->id)	//判断是否为子节点id
+		{
+			if (bl->childrenBlock->count() != 0) {
+				QString str = bl->content;
+				str.replace("#", "$");
+				cont.insert(i, "<@\n" + str + "\n@>\n");
+			}
+		}
+		n++;
+		index = cont.indexOf("#", index + 1);
+	}
+	this->setPlainText(cont);
+	//return global;
+}
 
+/*加载全局代码*/
+void SmartEdit::showContent(PlotPad* plot)
+{
+	QString cont = "";
+	if (plot->root) {
+		cont = getContent(plot->root);	//先处理根节点
+		ArrowLine* arr = plot->root->outArrow;
+		Block* block = Q_NULLPTR;
+		while (arr != Q_NULLPTR) {	//处理根节点的后继节点
+			block = arr->toBlock;
+			cont += getContent(block);
+			arr = block->outArrow;
+		}
+	}
+	this->setPlainText(cont);
+}
 
+/*全局显示时处理单个节点内容，返回正常代码*/
+QString SmartEdit::getContent(Block* block)
+{
+	QString cont = block->content;
+	int index = cont.indexOf("#", 0);
+	int n = 0;
+	QRegExp rx("\\d");
+	Block* bl;
+	while (index != -1)
+	{
+		int i = index + 1;
+		QString id = "";
+		while (rx.exactMatch(cont.at(i))) {	//获取id
+			id += cont.at(i);
+			i++;
+		}
+		bl = block->childrenBlock->at(n);
+		if (id == bl->id)	//判断是否为子节点id
+		{
+			cont.remove(index, i - 1);
+			cont.insert(index - 1, bl->content);
+		}
+		n++;
+		index = cont.indexOf("#", index + 1);
+	}
+	for (int j = 0; j < block->childrenBlock->count(); j++) {
+		if (!block->childrenBlock->at(j)->childrenBlock->isEmpty())
+			cont = this->getContent(block->childrenBlock->at(j));	//递归处理子孙节点
+	}
+	return cont;
+}
 /*
 刷新界面，只和updateRequest关联相比paintEvent大大降低cpu消耗
 */
@@ -560,7 +714,7 @@ QString SmartEdit::smartCore(QString key) {
 			moveIndex++;
 		}
 	}
-	QString retSmart ;
+	QString retSmart = "";
 	if (toolKeys.contains(key)) {
 		retSmart = key;
 		int index = toolKeys.indexOf(key);
