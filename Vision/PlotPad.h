@@ -74,7 +74,6 @@ private:
 
     qreal arrowSize;
     bool m_pointFlag;
-    static qreal min(qreal r1, qreal r2);
     static qreal abs(qreal r);
 };
 /*PlotPad*/
@@ -87,8 +86,10 @@ public:
     int indexTotal;
     QString title;
     QGraphicsScene* scene;
+    QAction* actionUndo, * actionRedo, * actionDelete, * actionBackLevel;
     SmartEdit* edit;
     TipLabel* pathLabel;
+
     Block* root;
     QStack<QList<Block*>*> blockStack; //blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
     RecordList* recordList;
@@ -102,6 +103,14 @@ public:
     void backLevel();
     //void deleteItem();
     void setRoot(Block* root);
+    /*
+    ActionCTRL
+    0 for undoredo's true\false
+    1 for backlevel's true\false
+    2 for delete's false
+    3 for delete's true
+    */
+    void ActionControl(int flag);
     QString getBlockPath();
 protected:
     void dropEvent(QDropEvent* event)override;

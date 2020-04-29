@@ -9,11 +9,9 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.30
-1.add Block*"parentBlock" in Block to support removing a Block within multi levels and undoing that;
-2.now Block Root change record is supported;
-3.fix the problem that blockStack.top().count not correct when redo or undo;
-4.setCacheMode(ItemCoordinateCache) in Item to reduce occupation of CPU;
+version 3.32
+1.remove func min() of ArrowLine;
+2.now Action Undo, Redo, Delete & BackLevel will setEnable properly.
 
 *.Block when redo or undo still can not be displayed correctly;
 *.Block's childRoot not suppoted;
@@ -22,7 +20,7 @@ version 3.30
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.30";
+const QString version = "3.32";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -57,11 +55,11 @@ Vision::Vision(QWidget* parent)
 		globalSplitter->setStretchFactor(i, 1);
 	}
 	setCentralWidget(globalSplitter);//放在布局最后
-	//加载qss
-	loadStyleSheet(this, "global.qss");
 	//启动计时器
 	timer->start(100);
 	showCurDateTime();
+	//加载qss
+	loadStyleSheet(this, "global.qss");
 	statusBar()->showMessage(QString::fromLocal8Bit("Vision为您服务"), 5000);
 	//槽函数
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
@@ -214,8 +212,10 @@ void Vision::BackLevel() {
 }
 /*删除*/
 void Vision::Delete() {
-	if (tabNotEmpty())
+	if (tabNotEmpty()) {
 		plots->at(plotTab->currentIndex())->removeItem();
+		visionUi.actionDelete->setEnabled(false);
+	}
 }
 /*取码*/
 void Vision::getCode() {
@@ -234,13 +234,6 @@ void Vision::New() {
 		visionUi.actionSaveAs->setEnabled(true);
 		visionUi.actionClose->setEnabled(true);
 		visionUi.actionGetCode->setEnabled(true);
-		visionUi.actionUndo->setEnabled(true);
-		visionUi.actionRedo->setEnabled(true);
-		visionUi.actionCopy->setEnabled(true);
-		visionUi.actionPaste->setEnabled(true);
-		visionUi.actionCut->setEnabled(true);
-		visionUi.actionDelete->setEnabled(true);
-		visionUi.actionBackLevel->setEnabled(true);
 	}
 	int index = plotTab->count();
 	QString defaultName = "#untitled@" + QString::number(index);
@@ -255,6 +248,10 @@ void Vision::New() {
 	editTab->setCurrentIndex(index);
 	newPad->edit = newEdit;
 	newPad->pathLabel = curNodePathLabel;
+	newPad->actionUndo = visionUi.actionUndo;
+	newPad->actionRedo = visionUi.actionRedo;
+	newPad->actionDelete = visionUi.actionDelete;
+	newPad->actionBackLevel = visionUi.actionBackLevel;
 	curNodePathLabel->blockPath = newPad->getBlockPath();
 	curNodePathLabel->setElidedText();
 	if (curNodePathLabel->isHidden())curNodePathLabel->show();
@@ -269,13 +266,6 @@ void Vision::Open() {
 		visionUi.actionSaveAs->setEnabled(true);
 		visionUi.actionClose->setEnabled(true);
 		visionUi.actionGetCode->setEnabled(true);
-		visionUi.actionUndo->setEnabled(true);
-		visionUi.actionRedo->setEnabled(true);
-		visionUi.actionCopy->setEnabled(true);
-		visionUi.actionPaste->setEnabled(true);
-		visionUi.actionCut->setEnabled(true);
-		visionUi.actionDelete->setEnabled(true);
-		visionUi.actionBackLevel->setEnabled(true);
 	}
 	QString filePath = QFileDialog::getOpenFileName(this,
 		QString::fromLocal8Bit("打开文件"), DEFAULT_PATH, tr("XML (*.xml)"));
@@ -378,9 +368,6 @@ void Vision::Close() {
 			visionUi.actionGetCode->setEnabled(false);
 			visionUi.actionUndo->setEnabled(false);
 			visionUi.actionRedo->setEnabled(false);
-			visionUi.actionCopy->setEnabled(false);
-			visionUi.actionPaste->setEnabled(false);
-			visionUi.actionCut->setEnabled(false);
 			visionUi.actionDelete->setEnabled(false);
 			visionUi.actionBackLevel->setEnabled(false);
 		}

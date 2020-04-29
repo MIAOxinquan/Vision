@@ -38,6 +38,10 @@ Item::Item()
 PlotPad::PlotPad(QGraphicsScene* scene)
 	: QGraphicsView()
 	, scene(Q_NULLPTR)
+	, actionUndo(Q_NULLPTR)
+	, actionRedo(Q_NULLPTR)
+	, actionDelete(Q_NULLPTR)
+	, actionBackLevel(Q_NULLPTR)
 	, edit(Q_NULLPTR)
 	, pathLabel(Q_NULLPTR)
 	, lastLine(Q_NULLPTR)
@@ -67,7 +71,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	setFocus();
 	QString type = event->mimeData()->text();//获取text
 	QPoint ePos = event->pos();//获取位置 --> PlotPad内的位置
-	Item* itemAtPos = (Item*)scene->itemAt(QPointF(ePos), QTransform());
+	Item* itemAtPos = (Item*)itemAt(ePos);
 	if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
 	Block* oldBlock = (Block*)itemAtPos;
 	Block* newBlock = new Block(ePos.rx() , ePos.ry() , type);
@@ -96,7 +100,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	newBlock->id = indexTotal;
 	scene->addItem(newBlock);
 	newBlock->setFocus();
-
+	ActionControl(3);
 	int tempLevel = blockStack.count();
 	QList<Record*>* records = new QList<Record*>();
 	if (oldBlock) // oldBlock != Q_NULLPTR
@@ -176,6 +180,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 		}
 	}
 	recordList->Do(records);
+	ActionControl(0);
 	if (1 == blockStack.count())
 		edit->showContent(this);
 	else {
@@ -222,12 +227,14 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 		QGraphicsView::mousePressEvent(e);
 		if (itemAt(e->pos())) {
 			Item* curItem = (Item*)itemAt(e->pos());
+			ActionControl(3);
 			if ("Block" == curItem->className()) {
 				Block* curBlock = (Block*)curItem;
 				edit->showContent(curBlock);
 			}
 		}
 		else {
+			ActionControl(2);
 			if (1 == blockStack.count())
 				edit->showContent(this);
 			else {
@@ -242,7 +249,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 {
 	if (e->button() == Qt::LeftButton)
 	{
-		Item* itemAtPos = (Item*)scene->itemAt(QPointF(e->pos()), QTransform());
+		Item* itemAtPos = (Item*)itemAt(e->pos());
 		if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
 		Block* blockAtPos = (Block*)itemAtPos;
 		if (!blockAtPos)return; // 如果it为Q_NULLPTR，则什么都不做
@@ -268,6 +275,8 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 			blockStack.push(new QList<Block*>());
 		}
 		blockOnPath->append(blockAtPos);
+		ActionControl(1);
+		ActionControl(2);
 		if (pathLabel) {
 			pathLabel->blockPath = getBlockPath();
 			pathLabel->setElidedText();
@@ -295,12 +304,14 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 					focusedBlock->inArrow = Q_NULLPTR;
 				}
 				recordList->Do(records);
+				ActionControl(0);
 			}
 		}
 	}
 }
 
 void PlotPad::backLevel() {
+	setFocus();
 	if (blockStack.count() > 1)	{
 		QList<Block*>* topBlock = blockStack.top();
 		for (int i = 0; i < topBlock->size(); ++i) {
@@ -312,6 +323,7 @@ void PlotPad::backLevel() {
 		}
 		blockStack.pop();
 		blockOnPath->removeLast();
+		ActionControl(1);
 		topBlock = blockStack.top();
 		for (int i = 0; i < topBlock->size(); ++i) {
 			topBlock->at(i)->show();
@@ -409,6 +421,7 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 	if (block->level == tempLevel) {
 		records->push_back(new RemoveBlock(block, topBlock));
 		recordList->Do(records);
+		ActionControl(0);
 	}
 	else {
 		records->push_back(new RemoveBlock(block, block->parentBlock->childrenBlock));
@@ -422,6 +435,7 @@ void PlotPad::removeArrowLine(ArrowLine* arrowLine) {
 	arrowLine->toBlock->inArrow = Q_NULLPTR;
 	arrowLine->fromBlock->outArrow = Q_NULLPTR;
 	recordList->Do(new RemoveArrowLine(arrowLine));
+	ActionControl(0);
 }
 
 ////删除item
@@ -490,8 +504,8 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 		if (ctrlPressed)
 		{
 			QTransform transform;
-			Item* fromItem = (Item*)scene->itemAt(QPointF(startPoint), transform);
-			Item* toItem = (Item*)scene->itemAt(QPointF(endPoint), transform);
+			Item* fromItem = (Item*)itemAt(startPoint);
+			Item* toItem = (Item*)itemAt(endPoint);
 			if (fromItem && toItem
 				&& fromItem->className() == "Block"
 				&& toItem->className() == "Block") {
@@ -542,23 +556,62 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					scene->addItem(newArrow);
 					records->push_back(new AddArrowLine(newArrow));
 					recordList->Do(records);
+					ActionControl(0);
 					newArrow->setFocus();
+					ActionControl(3);
 					if (1 == blockStack.count())
 						edit->showContent(this);
-					else {
-						Block* parentBlock = blockOnPath->last();
-						edit->showContent(parentBlock);
-					}
+					else 
+						edit->showContent(blockOnPath->last());
 				}
 			}
 		}
 	}
 	QGraphicsView::mouseReleaseEvent(e);
 }
-void PlotPad::undo() { recordList->Undo(); }
-void PlotPad::redo() { recordList->Redo(); }
+void PlotPad::ActionControl(int flag) {
+	switch (flag)
+	{
+	case 0://undo, redo 's true or false 
+		if (actionUndo && actionRedo) {
+			if (0 == recordList->undoList->count())
+				actionUndo->setEnabled(false);
+			else
+				actionUndo->setEnabled(true);
+			if (0 == recordList->redoList->count())
+				actionRedo->setEnabled(false);
+			else
+				actionRedo->setEnabled(true);
+		}
+		break; 
+	case 1://backlevel's true or false;
+		if (actionBackLevel) {
+			if (0 == blockOnPath->count())
+				actionBackLevel->setEnabled(false);
+			else
+				actionBackLevel->setEnabled(true);
+		}
+		break;
+	case 2://delete's false
+		if (actionDelete)actionDelete->setEnabled(false); break;
+	case 3://delete's true
+		if (actionDelete)actionDelete->setEnabled(true); break;
+	default:break;
+	}
+}
+void PlotPad::undo() { 
+	recordList->Undo(); 
+	for (int i = 0; i < 3; i++)
+		ActionControl(i);
+}
+void PlotPad::redo() { 
+	recordList->Redo();
+	for (int i = 0; i < 3; i++)
+		ActionControl(i);
+}
 
 /*Block*/
+QString Block::className() { return "Block"; }
 Block::Block(int x, int y, QString type)
 	:Item()
 	, outArrow(Q_NULLPTR)
@@ -574,8 +627,6 @@ Block::Block(int x, int y, QString type)
 	setPos(QPointF(x, y));
 	setZValue(0);
 }
-
-QString Block::className() { return "Block"; }
 
 void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
@@ -642,6 +693,7 @@ void Block::setChildRoot(Block* newChildRoot) {
 static const double Pi = 3.14159265358979323846264338327950288419717;
 static double TwoPi = 2.0 * Pi;
 
+QString ArrowLine::className() { return "ArrowLine"; }
 ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPointF pointEnd)
 	: Item()
 	, fromBlock(Q_NULLPTR)
@@ -657,9 +709,6 @@ ArrowLine::ArrowLine(Block* sourceNode, Block* destNode, QPointF pointStart, QPo
 	adjust();
 }
 
-QString ArrowLine::className() { return "ArrowLine"; }
-
-qreal ArrowLine::min(qreal r1, qreal r2) { return r1 < r2 ? r1 : r2; }
 qreal ArrowLine::abs(qreal r) { return (r >= 0) ? r : -r; }
 
 void ArrowLine::adjust() {

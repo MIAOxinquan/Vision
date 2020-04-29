@@ -67,11 +67,12 @@ public:
 
 class RecordList
 {
+public:
+	QList<QList<Record*>*>* undoList;
+	QList<QList<Record*>*>* redoList;
 private:
 	const int  MAX_REDO_STEP = 30;//最大重做数量
 	PlotPad* pad;
-	QList<QList<Record*>*>* undoList;
-	QList<QList<Record*>*>* redoList;
 
 	void delayedHandleUndoRecord(Record* record);
 	void delayedHandleUndoRecord(QList<Record*>* records);
@@ -80,7 +81,7 @@ private:
 
 	void Undo2Redu(QList<Record*>* records);
 	void clearRedoList();
-	/*void levelShow(Item* item);*/
+	void levelShow(Item* item);
 	void InDo(Record* record);
 	void InDo(QList<Record*>* records);
 

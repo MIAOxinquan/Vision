@@ -51,40 +51,40 @@ RecordList::~RecordList()
 {
 
 }
-//void RecordList::levelShow(Item* item) {
-//	int level = item->level;
-//	if (level > 0) {
-//		int stackLevel = pad->blockStack.count();
-//		if (level > pad->blockStack.count())item->hide();
-//		while (level < stackLevel) {
-//			pad->backLevel();
-//			stackLevel--;
-//		}
-//		if (level == stackLevel)item->show();
-//	}
-//}
+void RecordList::levelShow(Item* item) {
+	int level = item->level;
+	if (level > 0) {
+		int stackLevel = pad->blockStack.count();
+		if (level > pad->blockStack.count())item->hide();
+		while (level < stackLevel) {
+			pad->backLevel();
+			stackLevel--;
+		}
+		if (level == stackLevel)item->show();
+	}
+}
 void RecordList::InDo(Record* record)
 {
 	if (undoList->count() == MAX_REDO_STEP)//如果已经满了，则删除第一个并处理
 	{
-		QList<Record*>* handleRecords = undoList->front();
-		undoList->pop_front();
+		QList<Record*>* handleRecords = undoList->first();
+		undoList->removeFirst();
 		delayedHandleUndoRecord(handleRecords);
 	}
 	QList<Record*>* records = new QList<Record*>();
-	records->push_back(record);
-	undoList->push_back(records);
+	records->append(record);
+	undoList->append(records);
 }
 
 void RecordList::InDo(QList<Record*>* records)
 {
 	if (undoList->count() == MAX_REDO_STEP)//如果已经满了，则删除第一个并处理
 	{
-		QList<Record*>* handleRecords = undoList->front();
-		undoList->pop_front();
+		QList<Record*>* handleRecords = undoList->first();
+		undoList->removeFirst();
 		delayedHandleUndoRecord(handleRecords);
 	}
-	undoList->push_back(records);
+	undoList->append(records);
 }
 
 void RecordList::Do(Record* record)
@@ -123,25 +123,25 @@ void RecordList::Redo() {
 			concreteRecord->arrowLine->fromBlock->outArrow = concreteRecord->arrowLine;
 			concreteRecord->arrowLine->toBlock->inArrow = concreteRecord->arrowLine;
 			pad->scene->addItem(concreteRecord->arrowLine);
-			//levelShow(concreteRecord->arrowLine);
+			levelShow(concreteRecord->arrowLine);
 		}
 		else if (recordName == "AddBlock") {
 			AddBlock* concreteRecord = (AddBlock*)records->at(i);
 			pad->scene->addItem(concreteRecord->block);
 			pad->blockStack.top()->append(concreteRecord->block);
-			//levelShow(concreteRecord->block);
+			levelShow(concreteRecord->block);
 			if (concreteRecord->block->inArrow)//应该不会执行
 			{
 				concreteRecord->block->inArrow->fromBlock->outArrow = concreteRecord->block->inArrow;
 				pad->scene->addItem(concreteRecord->block->inArrow);
-				//levelShow(concreteRecord->block->inArrow);
+				levelShow(concreteRecord->block->inArrow);
 				//delete concreteRecord->block->inArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
 			if (concreteRecord->block->outArrow)//应该不会执行
 			{
 				concreteRecord->block->outArrow->toBlock->inArrow = concreteRecord->block->outArrow;
 				pad->scene->addItem(concreteRecord->block->outArrow);
-				//levelShow(concreteRecord->block->outArrow);
+				levelShow(concreteRecord->block->outArrow);
 				//delete concreteRecord->block->outArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
 		}
@@ -156,7 +156,7 @@ void RecordList::Redo() {
 			if (concreteRecord->arrowLine->toBlock)
 				concreteRecord->arrowLine->toBlock->inArrow = Q_NULLPTR;
 			pad->scene->removeItem(concreteRecord->arrowLine);
-			//levelShow(concreteRecord->arrowLine);
+			levelShow(concreteRecord->arrowLine);
 		}
 		else if (recordName == "RemoveBlock") {
 			RemoveBlock* concreteRecord = (RemoveBlock*)records->at(i);
@@ -165,15 +165,15 @@ void RecordList::Redo() {
 
 			pad->scene->removeItem(concreteRecord->block);//不需要考虑箭头，箭头在别处考虑了
 			pad->blockStack.top()->removeOne(concreteRecord->block);
-			//levelShow(concreteRecord->block);
+			levelShow(concreteRecord->block);
 			if (concreteRecord->block->childrenBlock) {
 				for (int i = 0; i < concreteRecord->block->childrenBlock->count(); ++i) {
 					Block* block = concreteRecord->block->childrenBlock->at(i);
 					pad->scene->removeItem(block);
-					//levelShow(block);
+					levelShow(block);
 					if (block->inArrow) {
 						pad->scene->removeItem(block->inArrow);
-						//levelShow(block->inArrow);
+						levelShow(block->inArrow);
 					}
 				}
 			}
@@ -194,7 +194,7 @@ void RecordList::Redo() {
 
 void RecordList::Undo2Redu(QList<Record*>* records) {
 	if (redoList->count() < MAX_REDO_STEP) {//应该是一定会满足的
-		redoList->push_back(records);
+		redoList->append(records);
 	}
 }
 
@@ -210,24 +210,24 @@ void RecordList::Undo() {
 			concreteRecord->arrowLine->fromBlock->outArrow = Q_NULLPTR;
 			concreteRecord->arrowLine->toBlock->inArrow = Q_NULLPTR;
 			pad->scene->removeItem(concreteRecord->arrowLine);
-			//levelShow(concreteRecord->arrowLine);
+			levelShow(concreteRecord->arrowLine);
 			//delete concreteRecord->arrowLine;//后面要修改，因为要Redo，所以此处不能删
 		}
 		else if (recordName == "AddBlock") {
 			AddBlock* concreteRecord = (AddBlock*)records->at(i);
 			pad->scene->removeItem(concreteRecord->block);
 			pad->blockStack.top()->removeOne(concreteRecord->block);
-			//levelShow(concreteRecord->block);
+			levelShow(concreteRecord->block);
 			if (concreteRecord->block->inArrow) {//应该不会执行
 				concreteRecord->block->inArrow->fromBlock->outArrow = Q_NULLPTR;
 				pad->scene->removeItem(concreteRecord->block->inArrow);
-				//levelShow(concreteRecord->block->inArrow);
+				levelShow(concreteRecord->block->inArrow);
 				//delete concreteRecord->block->inArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
 			if (concreteRecord->block->outArrow) {//应该不会执行
 				concreteRecord->block->outArrow->toBlock->inArrow = Q_NULLPTR;
 				pad->scene->removeItem(concreteRecord->block->outArrow);
-				//levelShow(concreteRecord->block->outArrow);
+				levelShow(concreteRecord->block->outArrow);
 				//delete concreteRecord->block->outArrow;//后面要修改，因为要Redo，所以此处不能删
 			}
 			//delete concreteRecord->block;
@@ -243,22 +243,22 @@ void RecordList::Undo() {
 			if (concreteRecord->arrowLine->toBlock)
 				concreteRecord->arrowLine->toBlock->inArrow = concreteRecord->arrowLine;
 			pad->scene->addItem(concreteRecord->arrowLine);
-			//levelShow(concreteRecord->arrowLine);
+			levelShow(concreteRecord->arrowLine);
 		}
 		else if (recordName == "RemoveBlock") {
 			RemoveBlock* concreteRecord = (RemoveBlock*)records->at(i);
 			concreteRecord->belongingList->push_back(concreteRecord->block);
 			pad->scene->addItem(concreteRecord->block);
 			pad->blockStack.top()->append(concreteRecord->block);
-			//levelShow(concreteRecord->block);
+			levelShow(concreteRecord->block);
 			if (concreteRecord->block->childrenBlock) {
 				for (int i = 0; i < concreteRecord->block->childrenBlock->count(); ++i) {
 					Block* block = concreteRecord->block->childrenBlock->at(i);
 					pad->scene->addItem(block);
-					//levelShow(block);
+					levelShow(block);
 					if (block->inArrow) {
 						pad->scene->addItem(block->inArrow);
-						//levelShow(block->inArrow);
+						levelShow(block->inArrow);
 					}
 				}
 			}
