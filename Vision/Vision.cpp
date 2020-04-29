@@ -9,20 +9,20 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.26
-1.add func getChildNodeContent(), getParentNodeContent(), showContent()^2 & getContent() in SmartEdit;
-2.SmartEdit content will change following PlotPad event;
-3.add (int)"level" in Block to support its display pattern;
-4.add func setChildRoot(Block*) to complete root system of PlotPad;
+version 3.30
+1.add Block*"parentBlock" in Block to support removing a Block within multi levels and undoing that;
+2.now Block Root change record is supported;
+3.fix the problem that blockStack.top().count not correct when redo or undo;
+4.setCacheMode(ItemCoordinateCache) in Item to reduce occupation of CPU;
 
-*.Block Root change record not supported;
+*.Block when redo or undo still can not be displayed correctly;
 *.Block's childRoot not suppoted;
 *.Block type will show children count if needed;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.26";
+const QString version = "3.30";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)

@@ -32,6 +32,7 @@ Item::Item()
 	:level(0)
 {
 	setFlags(ItemIsSelectable | ItemIsMovable | ItemIsFocusable);
+	setCacheMode(ItemCoordinateCache);//该项能降低刷新率，减少cpu使用，i7-7700HQ下5%左右
 }
 /*PlotPad*/
 PlotPad::PlotPad(QGraphicsScene* scene)
@@ -42,7 +43,7 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 	, lastLine(Q_NULLPTR)
 	, root(Q_NULLPTR)
 	, blockOnPath(new QList<Block*>)
-	, recordStack(new RecordStack(this))
+	, recordList(new RecordList(this))
 	, ctrlPressed(false)
 	, leftBtnPressed(false)
 	, indexTotal(-1)
@@ -108,12 +109,15 @@ void PlotPad::dropEvent(QDropEvent* event) {
 		for (int i = 0; i < innerCount; ++i)
 			if (innerBlock->at(i)->pos().y() > maxY)
 				maxY = innerBlock->at(i)->pos().y();
+		newBlock->parentBlock = oldBlock;
 		newBlock->setPos(200, maxY + 100);
 		newBlock->hide();
 		innerBlock->append(newBlock);
 		records->push_back(new AddBlock(newBlock, oldBlock->childrenBlock));
-		if (1 == innerBlock->count()) 
+		if (1 == innerBlock->count()) {
 			oldBlock->setChildRoot(newBlock);
+			records->push_back(new ResetRoot(Q_NULLPTR, oldBlock, oldBlock->childRoot, newBlock));
+		}
 		else {
 			Block* tempBlock = oldBlock->childRoot;
 			while (tempBlock->outArrow) {
@@ -131,19 +135,23 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	else {
 		newBlock->level = tempLevel;
 		QList<Block*>* topBlock = blockStack.top();
-		topBlock->push_back(newBlock);
+		topBlock->append(newBlock);
 		records->push_back(new AddBlock(newBlock, blockStack.top()));
 		if (1==topBlock->count()) {
-			if (1 == tempLevel)
+			if (1 == tempLevel) {
+				records->push_back(new ResetRoot(this, Q_NULLPTR, Q_NULLPTR, newBlock));
 				setRoot(newBlock);
+			}
 			else {
 				Block* parentBlock = blockOnPath->last();
+				records->push_back(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, newBlock));
 				parentBlock->setChildRoot(newBlock);
+				newBlock->parentBlock = parentBlock;
 			}
 			if (newBlock->inArrow) {
 				scene->removeItem(newBlock->inArrow);
 				newBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
-				records->push_back(new DeleteArrowLine(newBlock->inArrow));
+				records->push_back(new RemoveArrowLine(newBlock->inArrow));
 				newBlock->inArrow = Q_NULLPTR;
 			}
 		}
@@ -151,8 +159,11 @@ void PlotPad::dropEvent(QDropEvent* event) {
 			Block* tempBlock = Q_NULLPTR;
 			if (1 == tempLevel)
 				tempBlock = root;
-			else
-				tempBlock = blockOnPath->last()->childRoot;
+			else {
+				Block* parentBlock = blockOnPath->last();
+				tempBlock = parentBlock->childRoot;
+				newBlock->parentBlock = parentBlock;
+			}
 			while (tempBlock->outArrow) {
 				tempBlock = tempBlock->outArrow->toBlock;
 			}
@@ -164,12 +175,11 @@ void PlotPad::dropEvent(QDropEvent* event) {
 			records->push_back(new AddArrowLine(newArrow));
 		}
 	}
-	recordStack->Do(records);
+	recordList->Do(records);
 	if (1 == blockStack.count())
 		edit->showContent(this);
 	else {
-		Block* parentBlock = blockOnPath->last();
-		edit->showContent(parentBlock);
+		edit->showContent(blockOnPath->last());
 	}
 	QGraphicsView::dropEvent(event);
 }
@@ -267,19 +277,24 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 		if (scene->focusItem()) {
 			Item* focusedItem = (Item*)scene->focusItem();
 			if ("Block" == focusedItem->className()) {
+				QList<Record*>* records = new QList<Record*>();
 				Block* focusedBlock = (Block*)focusedItem;
-				if (1 == blockStack.count())
+				if (1 == blockStack.count()) {
+					records->push_back(new ResetRoot(this, Q_NULLPTR, this->root, focusedBlock));
 					setRoot(focusedBlock);
+				}
 				else {
 					Block* parentBlock = blockOnPath->last();
+					records->push_back(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, focusedBlock));
 					parentBlock->setChildRoot(focusedBlock);
 				}
 				if (focusedBlock->inArrow) {
 					scene->removeItem(focusedBlock->inArrow);
 					focusedBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
-					recordStack->Do(new DeleteArrowLine(focusedBlock->inArrow));
+					records->push_back(new RemoveArrowLine(focusedBlock->inArrow));
 					focusedBlock->inArrow = Q_NULLPTR;
 				}
+				recordList->Do(records);
 			}
 		}
 	}
@@ -347,14 +362,14 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 	{
 		scene->removeItem(block->inArrow);
 		block->inArrow->fromBlock->outArrow = Q_NULLPTR;//箭头的来源Block的outArrow应该置为空
-		records->push_back(new DeleteArrowLine(block->inArrow));
+		records->push_back(new RemoveArrowLine(block->inArrow));
 		block->inArrow = Q_NULLPTR; // 要不要这一步?
 	}
 	if (block->outArrow)
 	{
 		scene->removeItem(block->outArrow);
 		block->outArrow->toBlock->inArrow = Q_NULLPTR;
-		records->push_back(new DeleteArrowLine(block->outArrow));
+		records->push_back(new RemoveArrowLine(block->outArrow));
 		block->outArrow = Q_NULLPTR;
 	}
 	if (1 == tempLevel) {
@@ -362,11 +377,12 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 			root = Q_NULLPTR;
 		else {
 			Block* topFirst = topBlock->first();
+			records->push_back(new ResetRoot(this, Q_NULLPTR, this->root, topFirst));
 			setRoot(topFirst);
 			if (topFirst->inArrow) {
 				scene->removeItem(topFirst->inArrow);
 				topFirst->inArrow->fromBlock->outArrow = Q_NULLPTR;
-				records->push_back(new DeleteArrowLine(topFirst->inArrow));
+				records->push_back(new RemoveArrowLine(topFirst->inArrow));
 				topFirst->inArrow = Q_NULLPTR;
 			}
 		}
@@ -378,11 +394,12 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 				parentBlock->childRoot = Q_NULLPTR;
 			else {
 				Block* topFirst = topBlock->first();
+				records->push_back(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, topFirst));
 				parentBlock->setChildRoot(topFirst);
 				if (topFirst->inArrow) {
 					scene->removeItem(topFirst->inArrow);
 					topFirst->inArrow->fromBlock->outArrow = Q_NULLPTR;
-					records->push_back(new DeleteArrowLine(topFirst->inArrow));
+					records->push_back(new RemoveArrowLine(topFirst->inArrow));
 					topFirst->inArrow = Q_NULLPTR;
 				}
 			}
@@ -390,12 +407,11 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 	}
 	scene->removeItem(block); 
 	if (block->level == tempLevel) {
-		records->push_back(new DeleteBlock(block, topBlock));
-		recordStack->Do(records);
+		records->push_back(new RemoveBlock(block, topBlock));
+		recordList->Do(records);
 	}
 	else {
-		Block* parentBlock = (Block*)scene->focusItem();
-		records->push_back(new DeleteBlock(block, parentBlock->childrenBlock));
+		records->push_back(new RemoveBlock(block, block->parentBlock->childrenBlock));
 	}
 	return records;
 }
@@ -405,7 +421,7 @@ void PlotPad::removeArrowLine(ArrowLine* arrowLine) {
 	scene->removeItem(arrowLine);
 	arrowLine->toBlock->inArrow = Q_NULLPTR;
 	arrowLine->fromBlock->outArrow = Q_NULLPTR;
-	recordStack->Do(new DeleteArrowLine(arrowLine));
+	recordList->Do(new RemoveArrowLine(arrowLine));
 }
 
 ////删除item
@@ -449,8 +465,10 @@ void PlotPad::setRoot(Block* newRoot) {
 			root->update();
 		}
 		root = newRoot;
-		newRoot->blockText = "* " + newRoot->blockText;
-		newRoot->update();
+		if (newRoot) {
+			newRoot->blockText = "* " + newRoot->blockText;
+			newRoot->update();
+		}
 	}
 }
 
@@ -495,13 +513,13 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					if (startBlock->outArrow) {
 						startBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
 						scene->removeItem(startBlock->outArrow);
-						records->push_back(new DeleteArrowLine(startBlock->outArrow));
+						records->push_back(new RemoveArrowLine(startBlock->outArrow));
 						startBlock->outArrow = Q_NULLPTR;
 					}
 					if (endBlock->inArrow) {
 						endBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
 						scene->removeItem(endBlock->inArrow);
-						records->push_back(new DeleteArrowLine(endBlock->inArrow));
+						records->push_back(new RemoveArrowLine(endBlock->inArrow));
 						endBlock->inArrow = Q_NULLPTR;
 					}
 					/*强约束*/
@@ -513,7 +531,7 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 						if (temp == startBlock) {
 							endBlock->outArrow->toBlock->inArrow = Q_NULLPTR;
 							scene->removeItem(endBlock->outArrow);
-							records->push_back(new DeleteArrowLine(endBlock->outArrow));
+							records->push_back(new RemoveArrowLine(endBlock->outArrow));
 							endBlock->outArrow = Q_NULLPTR;
 						}
 					}
@@ -523,7 +541,7 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					endBlock->inArrow = newArrow;
 					scene->addItem(newArrow);
 					records->push_back(new AddArrowLine(newArrow));
-					recordStack->Do(records);
+					recordList->Do(records);
 					newArrow->setFocus();
 					if (1 == blockStack.count())
 						edit->showContent(this);
@@ -537,8 +555,8 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 	}
 	QGraphicsView::mouseReleaseEvent(e);
 }
-void PlotPad::undo() { recordStack->Undo(); }
-void PlotPad::redo() { recordStack->Redo(); }
+void PlotPad::undo() { recordList->Undo(); }
+void PlotPad::redo() { recordList->Redo(); }
 
 /*Block*/
 Block::Block(int x, int y, QString type)
@@ -546,6 +564,7 @@ Block::Block(int x, int y, QString type)
 	, outArrow(Q_NULLPTR)
 	, inArrow(Q_NULLPTR)
 	, childRoot(Q_NULLPTR)
+	, parentBlock(Q_NULLPTR)
 	, childrenBlock(new QList<Block*>())
 	, w(150)
 	, h(60)
@@ -564,7 +583,7 @@ void Block::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWi
 		| QPainter::SmoothPixmapTransform
 		| QPainter::TextAntialiasing);
 	if (hasFocus()) {
-		if (1 != zValue())setZValue(1);
+		if (1 != zValue())	setZValue(1);
 		painter->setPen("lightYellow");
 		painter->setFont(QFont("微软雅黑", 12, QFont::Bold));
 		painter->setBrush(QBrush("orange"));
@@ -600,8 +619,10 @@ void Block::setChildRoot(Block* newChildRoot) {
 			childRoot->update();
 		}
 		childRoot = newChildRoot;
-		newChildRoot->blockText = "* " + newChildRoot->blockText;
-		newChildRoot->update();
+		if (newChildRoot) {
+			newChildRoot->blockText = "* " + newChildRoot->blockText;
+			newChildRoot->update();
+		}
 	}
 }
 //删除节点的子孙节点

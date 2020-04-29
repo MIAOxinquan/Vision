@@ -39,25 +39,33 @@ public:
 	MoveBlock(Block* block);// fromPoint和toPoint怎么处理
 };
 
-class DeleteArrowLine :public Record
+class RemoveArrowLine :public Record
 {
 public:
 	virtual QString className();
 	ArrowLine* arrowLine;
-	DeleteArrowLine(ArrowLine* arrowLine);
+	RemoveArrowLine(ArrowLine* arrowLine);
 };
 
-class DeleteBlock :public Record
+class RemoveBlock :public Record
 {
 public:
 	virtual QString className();
 	Block* block;
 	QList<Block*>* belongingList;
-	DeleteBlock(Block* block, QList<Block*>* belongingList);
+	RemoveBlock(Block* block, QList<Block*>* belongingList);
 };
 
+class ResetRoot :public Record 
+{
+public:
+	virtual QString className();
+	Block* parentBlock, * oldRoot, * newRoot;
+	PlotPad* pad;
+	ResetRoot(PlotPad* pad, Block* parentBlock, Block* oldRoot, Block* newRoot);
+};
 
-class RecordStack
+class RecordList
 {
 private:
 	const int  MAX_REDO_STEP = 30;//最大重做数量
@@ -72,7 +80,7 @@ private:
 
 	void Undo2Redu(QList<Record*>* records);
 	void clearRedoList();
-	void levelShow(Item* item);
+	/*void levelShow(Item* item);*/
 	void InDo(Record* record);
 	void InDo(QList<Record*>* records);
 
@@ -82,6 +90,6 @@ public:
 	void Do(Record* record);
 	void Do(QList<Record*>* records);
 	
-	RecordStack(PlotPad* pad);
-	virtual ~RecordStack();
+	RecordList(PlotPad* pad);
+	virtual ~RecordList();
 };

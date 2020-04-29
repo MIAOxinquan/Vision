@@ -6,7 +6,7 @@
 class SmartEdit;
 class ArrowLine;
 class Record;
-class RecordStack;
+class RecordList;
 /*TipLabel*/
 class TipLabel :public QLabel {
 public:
@@ -32,7 +32,7 @@ public:
     int x, y, w, h, id;
     QString type, blockText, content;
     ArrowLine* inArrow, * outArrow;
-    Block* childRoot;
+    Block* childRoot, *parentBlock;
     QList<Block*>* childrenBlock;
 
     //void deleteSelf();
@@ -91,7 +91,7 @@ public:
     TipLabel* pathLabel;
     Block* root;
     QStack<QList<Block*>*> blockStack; //blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
-    RecordStack* recordStack;
+    RecordList* recordList;
     QList<Block*>*blockOnPath;
 
     void undo();
