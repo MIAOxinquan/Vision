@@ -54,16 +54,16 @@ PlotPad::PlotPad(QGraphicsScene* scene)
 {
 	this->scene = scene;
 	QGraphicsView::setScene(scene);
-	setSceneRect(0, 0, 1920, 1600);
+	setSceneRect(0, 0, 900, 600);
 	setAcceptDrops(true);
 	//去掉滚动条
-	setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-	setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	//setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	//setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	startPoint = QPoint(-1, -1);
 	endPoint = QPoint(-1, -1);
 	blockStack.push(new QList<Block*>());
 	/*加载qss*/
-	loadStyleSheet(this,"plot.qss");
+	loadStyleSheet(this,"pad.qss");
 }
 
 
@@ -100,7 +100,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	newBlock->id = indexTotal;
 	scene->addItem(newBlock);
 	newBlock->setFocus();
-	ActionControl(3);
+	DeleteCtrl();
 	int tempLevel = blockStack.count();
 	QList<Record*>* records = new QList<Record*>();
 	if (oldBlock) // oldBlock != Q_NULLPTR
@@ -180,7 +180,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 		}
 	}
 	recordList->Do(records);
-	ActionControl(0);
+	UndoRedoCtrl();
 	if (1 == blockStack.count())
 		edit->showContent(this);
 	else {
@@ -227,14 +227,12 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 		QGraphicsView::mousePressEvent(e);
 		if (itemAt(e->pos())) {
 			Item* curItem = (Item*)itemAt(e->pos());
-			ActionControl(3);
 			if ("Block" == curItem->className()) {
 				Block* curBlock = (Block*)curItem;
 				edit->showContent(curBlock);
 			}
 		}
 		else {
-			ActionControl(2);
 			if (1 == blockStack.count())
 				edit->showContent(this);
 			else {
@@ -242,6 +240,7 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 				edit->showContent(parentBlock);
 			}
 		}
+		DeleteCtrl();
 	}
 }
 
@@ -275,8 +274,8 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 			blockStack.push(new QList<Block*>());
 		}
 		blockOnPath->append(blockAtPos);
-		ActionControl(1);
-		ActionControl(2);
+		BackLevelCtrl();
+		DeleteCtrl();
 		if (pathLabel) {
 			pathLabel->blockPath = getBlockPath();
 			pathLabel->setElidedText();
@@ -304,7 +303,7 @@ void PlotPad::mouseDoubleClickEvent(QMouseEvent* e)
 					focusedBlock->inArrow = Q_NULLPTR;
 				}
 				recordList->Do(records);
-				ActionControl(0);
+				UndoRedoCtrl();
 			}
 		}
 	}
@@ -323,7 +322,8 @@ void PlotPad::backLevel() {
 		}
 		blockStack.pop();
 		blockOnPath->removeLast();
-		ActionControl(1);
+		BackLevelCtrl();
+		DeleteCtrl();
 		topBlock = blockStack.top();
 		for (int i = 0; i < topBlock->size(); ++i) {
 			topBlock->at(i)->show();
@@ -364,9 +364,16 @@ void PlotPad::removeItem()
 // 单纯地只remove当前Block，而不管他的ArrowLine，ArrowLine在Block之前移除
 QList<Record*>* PlotPad::removeBlock(Block* block) {
 	QList<Record*>* records = new QList<Record*>();
-	QList<Block*>* topBlock = blockStack.top();
-	topBlock->removeOne(block);
-	int topCount = topBlock->count(), tempLevel = blockStack.count();
+	//pzy修改
+	QList<Block*>* listOn;
+	if (1 == blockStack.top()->count(block))
+		listOn = blockStack.top();
+	else {
+		Block* focusBlock = (Block*)this->scene->focusItem();
+		listOn = focusBlock->childrenBlock;
+	}
+	listOn->removeOne(block);
+	int listCount = listOn->count(), tempLevel = blockStack.count();
 	for (int i = block->childrenBlock->count() - 1; i >= 0; --i) {
 		records->append(*removeBlock(block->childrenBlock->at(i)));
 	}
@@ -385,10 +392,10 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 		block->outArrow = Q_NULLPTR;
 	}
 	if (1 == tempLevel) {
-		if (0 == topCount)
+		if (0 == listCount)			//移除掉根节点
 			root = Q_NULLPTR;
 		else {
-			Block* topFirst = topBlock->first();
+			Block* topFirst = listOn->first();
 			records->push_back(new ResetRoot(this, Q_NULLPTR, this->root, topFirst));
 			setRoot(topFirst);
 			if (topFirst->inArrow) {
@@ -402,13 +409,13 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 	else {
 		Block* parentBlock = blockOnPath->last();
 		if (block == parentBlock->childRoot) {
-			if (0 == topCount)
+			if (0 == listCount)
 				parentBlock->childRoot = Q_NULLPTR;
 			else {
-				Block* topFirst = topBlock->first();
+				Block* topFirst = listOn->first();
 				records->push_back(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, topFirst));
 				parentBlock->setChildRoot(topFirst);
-				if (topFirst->inArrow) {
+				if (topFirst->inArrow) {	//删除新root的入箭头
 					scene->removeItem(topFirst->inArrow);
 					topFirst->inArrow->fromBlock->outArrow = Q_NULLPTR;
 					records->push_back(new RemoveArrowLine(topFirst->inArrow));
@@ -419,9 +426,9 @@ QList<Record*>* PlotPad::removeBlock(Block* block) {
 	}
 	scene->removeItem(block); 
 	if (block->level == tempLevel) {
-		records->push_back(new RemoveBlock(block, topBlock));
+		records->push_back(new RemoveBlock(block, listOn));
 		recordList->Do(records);
-		ActionControl(0);
+		UndoRedoCtrl();
 	}
 	else {
 		records->push_back(new RemoveBlock(block, block->parentBlock->childrenBlock));
@@ -435,7 +442,7 @@ void PlotPad::removeArrowLine(ArrowLine* arrowLine) {
 	arrowLine->toBlock->inArrow = Q_NULLPTR;
 	arrowLine->fromBlock->outArrow = Q_NULLPTR;
 	recordList->Do(new RemoveArrowLine(arrowLine));
-	ActionControl(0);
+	UndoRedoCtrl();
 }
 
 ////删除item
@@ -472,6 +479,7 @@ void PlotPad::removeArrowLine(ArrowLine* arrowLine) {
 
 /*设置根节点*/
 void PlotPad::setRoot(Block* newRoot) {
+	if (newRoot==Q_NULLPTR || newRoot->blockText.startsWith("*")) return;
 	if (newRoot != root) {
 		if (root) {
 			QString tempText = root->blockText;
@@ -490,7 +498,7 @@ QString PlotPad::getBlockPath() {
 	QString nodesPath = title;
 	int Count = blockOnPath->count();
 	for (int i = 0; i < Count; i++) {
-		nodesPath += ">>" + blockOnPath->at(i)->type;
+		nodesPath += ">" + blockOnPath->at(i)->type;
 	}
 	return  nodesPath;
 }
@@ -556,9 +564,9 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					scene->addItem(newArrow);
 					records->push_back(new AddArrowLine(newArrow));
 					recordList->Do(records);
-					ActionControl(0);
+					UndoRedoCtrl();
 					newArrow->setFocus();
-					ActionControl(3);
+					DeleteCtrl();
 					if (1 == blockStack.count())
 						edit->showContent(this);
 					else 
@@ -569,45 +577,46 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 	}
 	QGraphicsView::mouseReleaseEvent(e);
 }
-void PlotPad::ActionControl(int flag) {
-	switch (flag)
-	{
-	case 0://undo, redo 's true or false 
-		if (actionUndo && actionRedo) {
-			if (0 == recordList->undoList->count())
-				actionUndo->setEnabled(false);
-			else
-				actionUndo->setEnabled(true);
-			if (0 == recordList->redoList->count())
-				actionRedo->setEnabled(false);
-			else
-				actionRedo->setEnabled(true);
-		}
-		break; 
-	case 1://backlevel's true or false;
-		if (actionBackLevel) {
-			if (0 == blockOnPath->count())
-				actionBackLevel->setEnabled(false);
-			else
-				actionBackLevel->setEnabled(true);
-		}
-		break;
-	case 2://delete's false
-		if (actionDelete)actionDelete->setEnabled(false); break;
-	case 3://delete's true
-		if (actionDelete)actionDelete->setEnabled(true); break;
-	default:break;
+void PlotPad::UndoRedoCtrl() {
+	if (actionUndo && actionRedo) {
+		if (0 == recordList->undoList->count())
+			actionUndo->setEnabled(false);
+		else
+			actionUndo->setEnabled(true);
+		if (0 == recordList->redoList->count())
+			actionRedo->setEnabled(false);
+		else
+			actionRedo->setEnabled(true);
 	}
+}
+void PlotPad::BackLevelCtrl() {
+	if (actionBackLevel) {
+		if (0 == blockOnPath->count())
+			actionBackLevel->setEnabled(false);
+		else
+			actionBackLevel->setEnabled(true);
+	}
+}
+void PlotPad::DeleteCtrl() {
+	if (actionDelete) {
+		if (scene->focusItem())
+			actionDelete->setEnabled(true);
+		else
+			actionDelete->setEnabled(false);
+	}
+}
+void PlotPad::ActionCtrl() {
+	UndoRedoCtrl();
+	BackLevelCtrl();
+	DeleteCtrl();
 }
 void PlotPad::undo() { 
 	recordList->Undo(); 
-	for (int i = 0; i < 3; i++)
-		ActionControl(i);
+	ActionCtrl();
 }
 void PlotPad::redo() { 
 	recordList->Redo();
-	for (int i = 0; i < 3; i++)
-		ActionControl(i);
+	ActionCtrl();
 }
 
 /*Block*/
@@ -657,7 +666,7 @@ QRectF Block::boundingRect() const {
 //鼠标事件
 void Block::mouseMoveEvent(QGraphicsSceneMouseEvent* e)
 {
-	if (outArrow)	outArrow->adjust();
+	if (outArrow)outArrow->adjust();
 	if (inArrow)inArrow->adjust();
 	QGraphicsItem::mouseMoveEvent(e);
 }
@@ -751,8 +760,8 @@ void ArrowLine::adjust() {
 	}
 	QLineF line(mapFromItem(fromBlock, xF, yF), mapFromItem(toBlock, xT, yT));
 	prepareGeometryChange();
-	sourcePoint = line.p1();
-	destPoint = line.p2();
+	fromPoint = line.p1();
+	toPoint = line.p2();
 }
 
 QRectF ArrowLine::boundingRect() const
@@ -760,15 +769,15 @@ QRectF ArrowLine::boundingRect() const
 	if (!fromBlock || !toBlock)
 		return QRectF();
 	qreal extra = arrowSize / 2.0;
-	return QRectF(sourcePoint + m_pointStart, QSizeF((destPoint + m_pointEnd).x() - (sourcePoint + m_pointStart).x(),
-		(destPoint + m_pointEnd).y() - (sourcePoint + m_pointStart).y()))
+	return QRectF(fromPoint + m_pointStart, QSizeF((toPoint + m_pointEnd).x() - (fromPoint + m_pointStart).x(),
+		(toPoint + m_pointEnd).y() - (fromPoint + m_pointStart).y()))
 		.normalized().adjusted(-extra, -extra, extra, extra);
 }
 QPainterPath ArrowLine::shape() const
 {
 	QPainterPath painterPath;
-	painterPath.moveTo(sourcePoint);
-	painterPath.lineTo(destPoint);
+	painterPath.moveTo(fromPoint);
+	painterPath.lineTo(toPoint);
 	QPainterPathStroker stroker;
 	stroker.setWidth(1);
 	painterPath = stroker.createStroke(painterPath);
@@ -781,15 +790,15 @@ void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 		| QPainter::SmoothPixmapTransform
 		| QPainter::TextAntialiasing);
 	if (!fromBlock || !toBlock)return;
-	QLineF line(sourcePoint + m_pointStart, destPoint + m_pointEnd);
+	QLineF line(fromPoint + m_pointStart, toPoint + m_pointEnd);
 	if (qFuzzyCompare(line.length(), qreal(0.)))
 		return;
 	double angle = ::acos(line.dx() / line.length());
 	if (line.dy() >= 0)
 		angle = TwoPi - angle;
-	QPointF destArrowP1 = destPoint + m_pointEnd + QPointF(sin(angle - Pi / 3) * arrowSize,
+	QPointF destArrowP1 = toPoint + m_pointEnd + QPointF(sin(angle - Pi / 3) * arrowSize,
 		cos(angle - Pi / 3) * arrowSize);
-	QPointF destArrowP2 = destPoint + m_pointEnd + QPointF(sin(angle - Pi + Pi / 3) * arrowSize,
+	QPointF destArrowP2 = toPoint + m_pointEnd + QPointF(sin(angle - Pi + Pi / 3) * arrowSize,
 		cos(angle - Pi + Pi / 3) * arrowSize);
 
 	if (hasFocus()) {
@@ -801,8 +810,8 @@ void ArrowLine::paint(QPainter* painter, const QStyleOptionGraphicsItem*, QWidge
 		painter->setPen(QPen(QColor("darkslategray"), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 	}
 	painter->drawLine(line);
-	painter->drawLine(QLineF(destArrowP1, destPoint + m_pointEnd));
-	painter->drawLine(QLineF(destArrowP2, destPoint + m_pointEnd));
+	painter->drawLine(QLineF(destArrowP1, toPoint + m_pointEnd));
+	painter->drawLine(QLineF(destArrowP2, toPoint + m_pointEnd));
 }
 
 void ArrowLine::mouseMoveEvent(QGraphicsSceneMouseEvent* event)

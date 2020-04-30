@@ -1,3 +1,8 @@
+/*画布*/
+QAbstractScrollArea {
+    background: rgb(255,255,236)
+}
+
 /*滚动器设置*/
 .QScrollBar:vertical
 ,.QScrollBar:horizontal{
@@ -16,7 +21,7 @@
 }
 .QScrollBar::handle:vertical{ width:12px; min-height:30px;}
 .QScrollBar::handle:horizontal{height: 12px; min-width: 30px;}
-/*滚动条动画设置*/
+/*滚动条悬停设置*/
 .QScrollBar::handle:vertical:hover
 ,.QScrollBar::handle:horizontal:hover{
     background:lightskyblue ;
@@ -25,22 +30,4 @@
 .QScrollBar::handle:vertical:pressed
 ,.QScrollBar::handle:horizontal:pressed{
     background: lightyellow;
-}
-QListWidget{
-    background:rgb(255,255,236);
-    border: 2px solid #0A86AF;
-    border-radius: 6px;
-}
-QListWidget::item{
-    margin: 1px;
-    height: 27px;
-    background: #D7E9F5;
-    border: 2px solid lightskyblue;
-    border-radius: 9px;
-}
-QListWidget::item:hover{
-    margin: 0;
-    background: #9EC1E0;
-    color: lightyellow;
-    border: 2px solid #D7E9F5;
 }

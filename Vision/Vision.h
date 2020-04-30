@@ -25,11 +25,11 @@ private:
 	Ui::VisionClass visionUi;
 	QSplitter* globalSplitter;
 	ToolKit* toolKit;
-	QTabWidget* plotTab, * editTab;
+	QTabWidget* padTab, * editTab;
 	QTimer* timer;
 	QStringList filePaths;//已打开文件路径
 	QStringList fileNames;//已打开文件
-	QList<PlotPad*>* plots;//plot指针列表
+	QList<PlotPad*>* pads;//plot指针列表
 	QList<SmartEdit*>* edits;//edit指针列表
 
 	bool tabNotEmpty();

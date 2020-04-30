@@ -14,9 +14,9 @@ AddBlock::AddBlock(Block* block, QList<Block*>* belongingList) {
 
 /*MoveBlock*/
 QString MoveBlock::className() { return "MoveBlock"; }
-MoveBlock::MoveBlock(Block* block) {
+MoveBlock::MoveBlock(Block* block)
+{
 	this->block = block;
-	this->fromPoint = block->pos();
 }
 
 /*RemoveArrowLine*/
@@ -128,7 +128,7 @@ void RecordList::Redo() {
 		else if (recordName == "AddBlock") {
 			AddBlock* concreteRecord = (AddBlock*)records->at(i);
 			pad->scene->addItem(concreteRecord->block);
-			pad->blockStack.top()->append(concreteRecord->block);
+			concreteRecord->belongingList->append(concreteRecord->block);
 			levelShow(concreteRecord->block);
 			if (concreteRecord->block->inArrow)//应该不会执行
 			{
@@ -164,7 +164,7 @@ void RecordList::Redo() {
 				concreteRecord->belongingList->removeOne(concreteRecord->block);
 
 			pad->scene->removeItem(concreteRecord->block);//不需要考虑箭头，箭头在别处考虑了
-			pad->blockStack.top()->removeOne(concreteRecord->block);
+			concreteRecord->belongingList->removeOne(concreteRecord->block);
 			levelShow(concreteRecord->block);
 			if (concreteRecord->block->childrenBlock) {
 				for (int i = 0; i < concreteRecord->block->childrenBlock->count(); ++i) {
@@ -216,7 +216,7 @@ void RecordList::Undo() {
 		else if (recordName == "AddBlock") {
 			AddBlock* concreteRecord = (AddBlock*)records->at(i);
 			pad->scene->removeItem(concreteRecord->block);
-			pad->blockStack.top()->removeOne(concreteRecord->block);
+			concreteRecord->belongingList->removeOne(concreteRecord->block);
 			levelShow(concreteRecord->block);
 			if (concreteRecord->block->inArrow) {//应该不会执行
 				concreteRecord->block->inArrow->fromBlock->outArrow = Q_NULLPTR;
@@ -249,7 +249,7 @@ void RecordList::Undo() {
 			RemoveBlock* concreteRecord = (RemoveBlock*)records->at(i);
 			concreteRecord->belongingList->push_back(concreteRecord->block);
 			pad->scene->addItem(concreteRecord->block);
-			pad->blockStack.top()->append(concreteRecord->block);
+			concreteRecord->belongingList->append(concreteRecord->block);
 			levelShow(concreteRecord->block);
 			if (concreteRecord->block->childrenBlock) {
 				for (int i = 0; i < concreteRecord->block->childrenBlock->count(); ++i) {
@@ -262,6 +262,7 @@ void RecordList::Undo() {
 					}
 				}
 			}
+			
 		}
 		else if(recordName=="ResetRoot") {
 			ResetRoot* concreteRecord = (ResetRoot*)records->at(i);

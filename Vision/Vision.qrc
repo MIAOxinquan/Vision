@@ -37,8 +37,8 @@
         <file>Resources/qss/completer.qss</file>
         <file>Resources/qss/global.qss</file>
         <file>Resources/qss/msgBox.qss</file>
-        <file>Resources/qss/plot.qss</file>
-        <file>Resources/qss/smart.qss</file>
         <file>Resources/qss/tools.qss</file>
+        <file>Resources/qss/edit.qss</file>
+        <file>Resources/qss/pad.qss</file>
     </qresource>
 </RCC>

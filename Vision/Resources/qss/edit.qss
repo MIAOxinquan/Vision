@@ -32,6 +32,10 @@ QPlainTextEdit
 .QScrollBar::handle:vertical:hover
 ,.QScrollBar::handle:horizontal:hover{
     background:lightskyblue ;
-    border-radius: 6px;
+}
+/*滚动条点击设置*/
+.QScrollBar::handle:vertical:pressed
+,.QScrollBar::handle:horizontal:pressed{
+    background: lightyellow;
 }
 

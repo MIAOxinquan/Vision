@@ -46,8 +46,8 @@ protected:
     //鼠标事件
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event)override;
     //void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
-    /*void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;*/
+    //void mousePressEvent(QGraphicsSceneMouseEvent* event)override;
+    //void mouseReleaseEvent(QGraphicsSceneMouseEvent* event)override;
 private:
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 };
@@ -68,7 +68,7 @@ protected:
     void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
 
 private:
-    QPointF sourcePoint, destPoint
+    QPointF fromPoint, toPoint
         //偏移量,
         , m_pointStart, m_pointEnd;
 
@@ -107,10 +107,12 @@ public:
     ActionCTRL
     0 for undoredo's true\false
     1 for backlevel's true\false
-    2 for delete's false
-    3 for delete's true
+    2 for delete's true\false
     */
-    void ActionControl(int flag);
+    void UndoRedoCtrl();
+    void BackLevelCtrl();
+    void DeleteCtrl();
+    void ActionCtrl();
     QString getBlockPath();
 protected:
     void dropEvent(QDropEvent* event)override;

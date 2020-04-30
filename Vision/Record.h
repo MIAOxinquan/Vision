@@ -34,7 +34,7 @@ class MoveBlock :public Record
 {
 public:
 	virtual QString className();
-	QPointF fromPoint, toPoint;
+	QPointF posBefore, posAfter;
 	Block* block;
 	MoveBlock(Block* block);// fromPoint和toPoint怎么处理
 };

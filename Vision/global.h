@@ -52,18 +52,6 @@ const QStringList toolKeys = {
 	,"try_catch"/*11, try\n{\n\n}*/
 	,"func"/*12, func()\n{\n\n}*/
 };
-const QStringList blockContent = {
-	""
-	," Name\n{\n\n};"
-	,"if(Statement)"
-	,"if(Statement)\n{\n\n}else{\n\n}"
-	,"switch(Input){\ndefault:break;\n}"
-	,"for(Statement;;){\n\n}"
-	,"while(Statement){\n\n}"
-	,"do{\n\n}while();"
-	,"try(){\n\n}catch(){\nthrow\n}"
-	,"Type func(){\n\n}"
-};
 /*文本框智能补充字段*/
 const QStringList smarts = {
 	"()"/*0,  sizeof if while catch*/
@@ -79,6 +67,18 @@ const QStringList undefined = {
 	,"Statement"/*1, for if*2, for, while, do*/
 	,"Input"/*2, specail for switch*/
 	,"Type "/*3, special for func*/
+};
+const QStringList blockContent = {
+	""
+	," Name\n{\n\n};"
+	,"if(Statement)"
+	,"if(Statement)\n{\n\n}else{\n\n}"
+	,"switch(Input){\ndefault:break;\n}"
+	,"for(Statement;;){\n\n}"
+	,"while(Statement){\n\n}"
+	,"do{\n\n}while();"
+	,"try(){\n\n}catch(){\nthrow\n}"
+	,"Type func(){\n\n}"
 };
 /*加载QSS*/
 void  loadStyleSheet(QWidget* ptr, QString fullFileName);

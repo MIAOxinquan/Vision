@@ -169,7 +169,7 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, rowNumArea(new RowNumArea(this))
 	, keysCompleter(Q_NULLPTR)
 {
-	//this->setAcceptDrops(false);
+	this->setAcceptDrops(false);
 	setContextMenuPolicy(Qt::NoContextMenu);
 	setFont(QFont("微软雅黑", 12));
 	setWordWrapMode(QTextOption::NoWrap);  //水平自适应滚动条
@@ -181,7 +181,7 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	keysCompleter->setMaxVisibleItems(8);
 	keysCompleter->popup()->setFont(QFont("微软雅黑", 12, QFont::Bold));
 	//加载qss
-	loadStyleSheet(this, "smart.qss");
+	loadStyleSheet(this, "edit.qss");
 
 	rowContentPlot();//初始化刷新行号块
 	//槽函数
