@@ -3,6 +3,8 @@
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QDomDocument>
+#include <QtXml>
 class SmartEdit;
 class ArrowLine;
 class Record;
@@ -28,6 +30,8 @@ public:
 class Block :public Item{
 public:
     Block(int x, int y, QString str);
+    Block(int x, int y, QString str, int _id);
+    Block(QDomElement element);
     //~Block();
     int x, y, w, h, id;
     QString type, blockText, content;
@@ -35,6 +39,7 @@ public:
     Block* childRoot, *parentBlock;
     QList<Block*>* childrenBlock;
 
+    void outport(QDomDocument& doc, QDomElement& parent);
     //void deleteSelf();
     void setChildRoot(Block* newChildRoot);
     QString className()override;
@@ -55,6 +60,7 @@ private:
 class ArrowLine : public Item{
 public:
     ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF);
+    ArrowLine(Block* sourceItem, Block* destItem, QPointF, QPointF, int _level);
     //~ArrowLine();
     Block* fromBlock, * toBlock;
 
@@ -95,6 +101,11 @@ public:
     RecordList* recordList;
     QList<Block*>*blockOnPath;
 
+    int getIndexTotal() {
+        int ans = ++indexTotal;
+        return ans;
+    }
+
     void undo();
     void redo();
     void removeItem();
@@ -102,7 +113,18 @@ public:
     void removeArrowLine(ArrowLine* arrowLine);
     void backLevel();
     //void deleteItem();
+    //设置主根节点
     void setRoot(Block* root);
+    //用于输出PlotPad内所有Block的XML结构
+    void outport(QString path);
+    //添加一个节点 到 当前界面内
+    void addBlockIntoPad(Block* newBlock);
+    void addBlockIntoPad(Block* newBlock, QList<Record*>* records); //用records记录行为
+    //添加一个节点到另一个节点里
+    void addBlockIntoBlock(Block* oldBlock, Block* newBlock, QList<Record*>* records);
+    //连接两个节点并将连线添加到scene中 并 返回连接线
+    ArrowLine* connectBlocks(Block* src, Block* des, int _level, QList<Record*>* records);
+
     /*
     ActionCTRL
     0 for undoredo's true\false
@@ -115,6 +137,7 @@ public:
     void ActionCtrl();
     QString getBlockPath();
 protected:
+    
     void dropEvent(QDropEvent* event)override;
     void dragEnterEvent(QDragEnterEvent* event)override;
     void dragMoveEvent(QDragMoveEvent* event)override;

@@ -71,7 +71,7 @@ const QStringList undefined = {
 const QStringList blockContent = {
 	""
 	," Name\n{\n\n};"
-	,"if(Statement)"
+	,"if(Statement){\n\n}"
 	,"if(Statement)\n{\n\n}else{\n\n}"
 	,"switch(Input){\ndefault:break;\n}"
 	,"for(Statement;;){\n\n}"

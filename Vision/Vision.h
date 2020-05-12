@@ -1,4 +1,6 @@
 #include <QtWidgets>
+#include <QDomDocument>
+#include <QtXml>
 #include "ui_Vision.h"
 
 namespace Ui {
@@ -8,6 +10,7 @@ class ToolKit;
 class PlotPad;
 class SmartEdit;
 class TipLabel;
+class Block;
 class Vision : public QMainWindow
 {
 	Q_OBJECT
@@ -33,6 +36,8 @@ private:
 	QList<SmartEdit*>* edits;//edit指针列表
 
 	bool tabNotEmpty();
+	//处理当前XML节点 写此函数是为了递归
+	void executeElementChilds(QDomElement e, PlotPad* pad, Block* parent, int _level);
 private slots:
 	//大写是为避免和qt自带函数重名
 	void Undo();

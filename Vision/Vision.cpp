@@ -9,16 +9,18 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.36 without start;
+version 3.36 forward to 4.00
+1.fit PlotPad workgroup version into Integrate version;
+2.optimize code for dropEvent of PlotPad;
+3.modify construct-function of Block & ArrowLine;
+4.pack the get-function of totalIndex into Block;
 
-*.Block when redo or undo still can not be displayed correctly;
-*.Block's childRoot not suppoted;
 *.Block type will show children count if needed;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "3.36";
+const QString version = "4.00";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -266,8 +268,12 @@ void Vision::Open() {
 		visionUi.actionClose->setEnabled(true);
 		visionUi.actionGetCode->setEnabled(true);
 	}
+	//文件路径
 	QString filePath = QFileDialog::getOpenFileName(this,
 		QString::fromLocal8Bit("打开文件"), DEFAULT_PATH, tr("XML (*.xml)"));
+	QStringList names = filePath.split('/');
+	//文件名字
+	QString fileName = *(names.end() - 1);
 	if (filePath != "" ) {
 		if (filePaths.contains(filePath, Qt::CaseSensitive)) {//将焦点跳转到相同路径的tab
 			int index = filePaths.indexOf(filePath);
@@ -276,8 +282,122 @@ void Vision::Open() {
 		}
 		else {//读取文件内容，解析后加载到plotTab和editTab
 
+			//新建一个面板
+			int index = padTab->count();
+			QString defaultName = fileName;
+			PlotPad* newPad = new PlotPad(new QGraphicsScene());
+			newPad->title = defaultName;
+			pads->append(newPad);
+			padTab->addTab(newPad, defaultName);
+			padTab->setCurrentIndex(index);
+			SmartEdit* newEdit = new SmartEdit();
+			edits->append(newEdit);
+			editTab->addTab(newEdit, defaultName);
+			editTab->setCurrentIndex(index);
+			newPad->edit = newEdit;
+			newPad->pathLabel = curNodePathLabel;
+			newPad->actionUndo = visionUi.actionUndo;
+			newPad->actionRedo = visionUi.actionRedo;
+			newPad->actionDelete = visionUi.actionDelete;
+			newPad->actionBackLevel = visionUi.actionBackLevel;
+			newPad->ActionCtrl();
+			curNodePathLabel->blockPath = newPad->getBlockPath();
+			curNodePathLabel->setElidedText();
+			if (curNodePathLabel->isHidden())curNodePathLabel->show();
+
+
+			//打开或创建文件
+			QFile file(filePath); //相对路径、绝对路径、资源路径都行
+			if (!file.open(QFile::ReadOnly))
+				return;
+
+			QDomDocument doc;
+			if (!doc.setContent(&file))
+			{
+				file.close();
+				return;
+			}
+			file.close();
+
+			QDomElement root = doc.documentElement(); //返回根节点
+			qDebug() << root.nodeName();
+			QDomNode node = root.firstChild(); //获得第一个子节点
+			Block* preBlock = Q_NULLPTR;
+			int nowLevel = 1;
+			while (!node.isNull())  //如果节点不空
+			{
+				if (node.isElement()) //如果节点是元素
+				{
+					QDomElement e = node.toElement(); //转换为元素，注意元素和节点是两个数据结构，其实差不多
+					Block* nowBlock = new Block(e);
+					newPad->addBlockIntoPad(nowBlock);
+					if (e.attribute("blockText").contains("*")) {
+						newPad->setRoot(nowBlock);
+					}
+					//如果前面有个节点 且hasArrowLine就连接
+					if (preBlock) {
+						newPad->connectBlocks(preBlock, nowBlock, nowLevel, new QList<Record*>());
+						preBlock = Q_NULLPTR;
+					}
+
+					if (e.attribute("hasArrowLine") == "1") {
+						preBlock = nowBlock;
+					}
+
+					qDebug() << e.tagName() << " " << e.attribute("id"); //打印键值对，tagName和nodeName是一个东西
+					//下一句负责处理当前节点的所有子节点 并 递归后续
+					executeElementChilds(e, newPad, nowBlock, nowLevel + 1);
+					
+				}
+				node = node.nextSibling(); //下一个兄弟节点,nextSiblingElement()是下一个兄弟元素，都差不多
+			}
+			if (1 == newPad->blockStack.count())
+				newEdit->showContent(newPad);
+			else {
+				newEdit->showContent(newPad->blockOnPath->last());
+			}
+			
+			//以下待补充
+
+
+			//将filePath添到已打开文件们中
+			filePaths.append(filePath);
+
 			statusBar()->showMessage(QString::fromLocal8Bit("打开文件") + filePath, 3000);
 		}
+	}
+}
+
+/*处理当前XML节点的子节点*/
+void Vision::executeElementChilds(QDomElement e, PlotPad* newPad, Block* parent, int _level) {
+	QDomNodeList list = e.childNodes();
+	Block* preBlock = Q_NULLPTR;
+	for (int i = 0; i < list.count(); i++) //遍历子元素，count和size都可以用,可用于标签数计数
+	{
+		QDomNode n = list.at(i);
+		if (n.isElement()) {
+			qDebug() << n.nodeName() << ":" << n.toElement().text();
+			QDomElement childElement = n.toElement();
+			if (childElement.tagName() == "Block") {
+				Block* nowBlock = new Block(childElement);
+				newPad->addBlockIntoBlock(parent, nowBlock, Q_NULLPTR);
+				if (childElement.attribute("blockText").contains("*")) {
+					parent->setChildRoot(nowBlock);
+				}
+				//如果前面有个节点 且hasArrowLine就连接
+				if (preBlock) {
+					newPad->connectBlocks(preBlock, nowBlock, _level, new QList<Record*>())->hide(); //把这个连接的箭头隐藏掉
+					preBlock = Q_NULLPTR;
+				}
+				if (childElement.attribute("hasArrowLine") == "1") {
+					preBlock = nowBlock;
+				}
+
+				//处理当前节点的子节点们
+				executeElementChilds(childElement, newPad, nowBlock, _level + 1);
+			}
+		}
+
 	}
 }
 /*保存文件*/
@@ -327,7 +447,10 @@ void Vision::SaveAll() {
 }
 /*导出，另存为*/
 void Vision::SaveAs() {
-
+	if (tabNotEmpty()) {
+		int index = editTab->currentIndex();
+		pads->at(index)->outport("test.xml");
+	}
 }
 /*关闭文件*/
 void Vision::Close() {
