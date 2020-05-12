@@ -9,18 +9,16 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version 3.36 forward to 4.00
-1.fit PlotPad workgroup version into Integrate version;
-2.optimize code for dropEvent of PlotPad;
-3.modify construct-function of Block & ArrowLine;
-4.pack the get-function of totalIndex into Block;
+version  4.02
+1.fix bug that the root of pad will be null if a children-containning block is removed;
+2.now id-insert is supported when a Block dropped into its parent but not for grandparent;
 
 *.Block type will show children count if needed;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "4.00";
+const QString version = "4.02";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -323,20 +321,19 @@ void Vision::Open() {
 			qDebug() << root.nodeName();
 			QDomNode node = root.firstChild(); //获得第一个子节点
 			Block* preBlock = Q_NULLPTR;
-			int nowLevel = 1;
 			while (!node.isNull())  //如果节点不空
 			{
 				if (node.isElement()) //如果节点是元素
 				{
 					QDomElement e = node.toElement(); //转换为元素，注意元素和节点是两个数据结构，其实差不多
 					Block* nowBlock = new Block(e);
-					newPad->addBlockIntoPad(nowBlock);
+					newPad->addBlock(nowBlock);
 					if (e.attribute("blockText").contains("*")) {
 						newPad->setRoot(nowBlock);
 					}
 					//如果前面有个节点 且hasArrowLine就连接
 					if (preBlock) {
-						newPad->connectBlocks(preBlock, nowBlock, nowLevel, new QList<Record*>());
+						newPad->connectBlocks(preBlock, nowBlock, new QList<Record*>());
 						preBlock = Q_NULLPTR;
 					}
 
@@ -346,7 +343,7 @@ void Vision::Open() {
 
 					qDebug() << e.tagName() << " " << e.attribute("id"); //打印键值对，tagName和nodeName是一个东西
 					//下一句负责处理当前节点的所有子节点 并 递归后续
-					executeElementChilds(e, newPad, nowBlock, nowLevel + 1);
+					executeElementChilds(e, newPad, nowBlock, nowBlock->level + 1);
 					
 				}
 				node = node.nextSibling(); //下一个兄弟节点,nextSiblingElement()是下一个兄弟元素，都差不多
@@ -386,7 +383,7 @@ void Vision::executeElementChilds(QDomElement e, PlotPad* newPad, Block* parent,
 				}
 				//如果前面有个节点 且hasArrowLine就连接
 				if (preBlock) {
-					newPad->connectBlocks(preBlock, nowBlock, _level, new QList<Record*>())->hide(); //把这个连接的箭头隐藏掉
+					newPad->connectBlocks(preBlock, nowBlock,  new QList<Record*>())->hide(); //把这个连接的箭头隐藏掉
 					preBlock = Q_NULLPTR;
 				}
 				if (childElement.attribute("hasArrowLine") == "1") {

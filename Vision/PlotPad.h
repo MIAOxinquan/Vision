@@ -42,6 +42,8 @@ public:
     void outport(QDomDocument& doc, QDomElement& parent);
     //void deleteSelf();
     void setChildRoot(Block* newChildRoot);
+    void addChildBlock(Block*newChild,QList<Record*>*records);
+    void idMarker(Block* newChild);
     QString className()override;
     QRectF boundingRect() const override;
 protected:
@@ -118,12 +120,12 @@ public:
     //用于输出PlotPad内所有Block的XML结构
     void outport(QString path);
     //添加一个节点 到 当前界面内
-    void addBlockIntoPad(Block* newBlock);
-    void addBlockIntoPad(Block* newBlock, QList<Record*>* records); //用records记录行为
+    void addBlock(Block* newBlock);
+    void addBlock(Block* newBlock, QList<Record*>* records); //用records记录行为
     //添加一个节点到另一个节点里
     void addBlockIntoBlock(Block* oldBlock, Block* newBlock, QList<Record*>* records);
     //连接两个节点并将连线添加到scene中 并 返回连接线
-    ArrowLine* connectBlocks(Block* src, Block* des, int _level, QList<Record*>* records);
+    ArrowLine* connectBlocks(Block* src, Block* des, QList<Record*>* records);
 
     /*
     ActionCTRL

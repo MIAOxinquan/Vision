@@ -247,7 +247,6 @@ void RecordList::Undo() {
 		}
 		else if (recordName == "RemoveBlock") {
 			RemoveBlock* concreteRecord = (RemoveBlock*)records->at(i);
-			concreteRecord->belongingList->push_back(concreteRecord->block);
 			pad->scene->addItem(concreteRecord->block);
 			concreteRecord->belongingList->append(concreteRecord->block);
 			levelShow(concreteRecord->block);

@@ -442,7 +442,7 @@ void SmartEdit::showContent(PlotPad* plot)
 		Block* block = Q_NULLPTR;
 		while (arr != Q_NULLPTR) {	//处理根节点的后继节点
 			block = arr->toBlock;
-			cont += getContent(block);
+			cont += "\n" + getContent(block);
 			arr = block->outArrow;
 		}
 	}
@@ -459,8 +459,8 @@ QString SmartEdit::getContent(Block* block)
 	Block* bl;
 	while (index != -1)
 	{
-		int i = index + 1;
 		QString id = "";
+		int i = index + 1;
 		while (rx.exactMatch(cont.at(i))) {	//获取id
 			id += cont.at(i);
 			i++;
@@ -474,9 +474,11 @@ QString SmartEdit::getContent(Block* block)
 		n++;
 		index = cont.indexOf("#", index + 1);
 	}
-	for (int j = 0; j < block->childrenBlock->count(); j++) {
-		if (!block->childrenBlock->at(j)->childrenBlock->isEmpty())
-			cont = this->getContent(block->childrenBlock->at(j));	//递归处理子孙节点
+	for (int j = 0; j < block->childrenBlock->count(); j++) {//递归处理子孙节点
+		if (!block->childrenBlock->at(j)->childrenBlock->isEmpty()) {
+			QString subCont = this->getContent(block->childrenBlock->at(j));
+			cont.replace(block->childrenBlock->at(j)->content, subCont);
+		}
 	}
 	return cont;
 }
