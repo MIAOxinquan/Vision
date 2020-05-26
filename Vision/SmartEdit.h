@@ -28,7 +28,7 @@ public:
 	QStringList getChildNodeContent();
 	QString getParentNodeContent();
 	void showContent(Block* block);
-	void showContent(PlotPad* plot);
+	QString showContent(PlotPad* plot);
 	QString getContent(Block* block);
 
 protected:

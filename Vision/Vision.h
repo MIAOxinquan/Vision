@@ -38,6 +38,8 @@ private:
 	bool tabNotEmpty();
 	//处理当前XML节点 写此函数是为了递归
 	void executeElementChilds(QDomElement e, PlotPad* pad, Block* parent, int _level);
+	//保存文件
+	int fSave(QString filePath,int index);
 private slots:
 	//大写是为避免和qt自带函数重名
 	void Undo();

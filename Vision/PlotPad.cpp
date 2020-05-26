@@ -76,7 +76,7 @@ void PlotPad::addBlock(Block* newBlock)
 
 void PlotPad::addBlock(Block* newBlock, QList<Record*>* records) {
 	scene->addItem(newBlock); //将newBlock添加到scene里
-
+	newBlock->setFocus();
 	//QList<Record*>* records = new QList<Record*>(); //用于记录添加行为、设置根节点、以及可能发生的线删除行为
 
 	int tempLevel = blockStack.count();//获取当前界面的等级
@@ -92,6 +92,7 @@ void PlotPad::addBlockIntoBlock(Block* oldBlock, Block* newBlock, QList<Record*>
 		records = new QList<Record*>();
 	}
 	this->scene->addItem(newBlock);
+	newBlock->setFocus();
 	//将block加入block应当封装到Block中
 	/*包含level、childrenBlock、parentBlock以及records操作*/
 	//int oldLevel = blockStack.count();//获取当前界面的等级
@@ -111,14 +112,14 @@ void PlotPad::addBlockIntoBlock(Block* oldBlock, Block* newBlock, QList<Record*>
 	//records->append(new AddBlock(newBlock, oldBlock->childrenBlock));
 }
 
-ArrowLine* PlotPad::connectBlocks(Block* src, Block* des, QList<Record*>* records)
+ArrowLine* PlotPad::connectBlocks(Block* src, Block* des, int _level, QList<Record*>* records)
 {
-	ArrowLine* newArrow = new ArrowLine(src, des, QPointF(0, 0), QPointF(0, 0), des->level);
+	ArrowLine* newArrow = new ArrowLine(src, des, QPointF(0, 0), QPointF(0, 0), _level);
 	//newArrow->level = tempLevel;  这句应该在构造函数里 2020.5.10Mashiro改
 	src->outArrow = newArrow;
 	des->inArrow = newArrow;
 	this->scene->addItem(newArrow);
-	records->append(new AddArrowLine(newArrow));
+	records->push_back(new AddArrowLine(newArrow));
 	return newArrow;
 }
 
@@ -130,7 +131,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	Item* itemAtPos = (Item*)itemAt(ePos);
 	if (itemAtPos && itemAtPos->className() == "ArrowLine") return;
 	Block* oldBlock = (Block*)itemAtPos;
-	Block* newBlock = new Block(ePos.rx() , ePos.ry() , type , getIndexTotal());
+	Block* newBlock = new Block(ePos.rx(), ePos.ry(), type, getIndexTotal());
 	//newBlock->blockText = type;  这句不应该在构造函数外边 已移入 2020.5.9Mashiro改
 
 	//content test 不应该出现在构造函数外边 2020.5.9Mashiro改
@@ -163,12 +164,17 @@ void PlotPad::dropEvent(QDropEvent* event) {
 	//newBlock->setFocus(); //设置newBlock为焦点   这句同上句
 
 	DeleteCtrl();
+	int tempLevel = blockStack.count();//获取当前界面的等级
 	//保存一条信息
 	QList<Record*>* records = new QList<Record*>();
 	if (oldBlock) // oldBlock != Q_NULLPTR
 	{
 		//如果是添加子节点操作
+		newBlock->parentBlock = oldBlock;	//512
+		tempLevel = tempLevel + 1;
+		newBlock->level = tempLevel;
 		//qreal maxY = -1;
+		QList<Block*>* innerBlocks = oldBlock->childrenBlock;
 		addBlockIntoBlock(oldBlock, newBlock, records);
 		//下面注释部分被移入addBlockIntoBlock
 		/*int innerCount = innerBlocks->count();
@@ -179,11 +185,11 @@ void PlotPad::dropEvent(QDropEvent* event) {
 		newBlock->setPos(200, maxY + 100);
 		newBlock->hide();
 		innerBlocks->append(newBlock);
-		records->append(new AddBlock(newBlock, oldBlock->childrenBlock));*/
-		if (1 == oldBlock->childrenBlock->count()) {
+		records->push_back(new AddBlock(newBlock, oldBlock->childrenBlock));*/
+		if (1 == innerBlocks->count()) {
 			//如果子节点只有一个空节点 那么 应该设置  
 			oldBlock->setChildRoot(newBlock);
-			records->append(new ResetRoot(Q_NULLPTR, oldBlock, oldBlock->childRoot, newBlock));
+			records->push_back(new ResetRoot(Q_NULLPTR, oldBlock, oldBlock->childRoot, newBlock));
 		}
 		else {
 			Block* tempBlock = oldBlock->childRoot;
@@ -191,14 +197,14 @@ void PlotPad::dropEvent(QDropEvent* event) {
 				tempBlock = tempBlock->outArrow->toBlock;
 			}
 			//ArrowLine* newArrow = new ArrowLine(tempBlock, newBlock, QPointF(0, 0), QPointF(0, 0));
-			ArrowLine* newArrow = connectBlocks(tempBlock, newBlock, records); //连接两个
+			ArrowLine* newArrow = connectBlocks(tempBlock, newBlock, tempLevel, records); //连接两个
 			newArrow->hide();
 			//下面的内容被移入connectBlocks函数中 5.10Mashiro改
 			/*newArrow->level = tempLevel;
 			tempBlock->outArrow = newArrow;
 			newBlock->inArrow = newArrow;
 			scene->addItem(newArrow);
-			records->append(new AddArrowLine(newArrow));*/
+			records->push_back(new AddArrowLine(newArrow));*/
 		}
 	}
 	else {
@@ -208,22 +214,20 @@ void PlotPad::dropEvent(QDropEvent* event) {
 		}
 		else {
 			newBlock->parentBlock = this->blockOnPath->last();
-			this->blockOnPath->last()->idMarker(newBlock);
 		}
 		addBlock(newBlock, records);//添加节点到scene 并用records记录
 		QList<Block*>* topBlock = blockStack.top();  //获取当前界面显示的Block序列
-		int tempLevel = blockStack.count();//获取当前界面的等级
 		if (1 == topBlock->count()) {
 			//topBlock会有一个空节点吗?
 			if (1 == tempLevel) {
 				//如果newBlock是顶界面的第一个节点
-				records->append(new ResetRoot(this, Q_NULLPTR, Q_NULLPTR, newBlock));
+				records->push_back(new ResetRoot(this, Q_NULLPTR, Q_NULLPTR, newBlock));
 				setRoot(newBlock);  //设置为主根节点
 			}
 			else {
 				//如果newBlock是非顶界面的第一个节点
 				Block* parentBlock = blockOnPath->last();  //用路径方式获取父节点
-				records->append(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, newBlock));
+				records->push_back(new ResetRoot(Q_NULLPTR, parentBlock, parentBlock->childRoot, newBlock));
 				parentBlock->setChildRoot(newBlock);
 				newBlock->parentBlock = parentBlock;
 			}
@@ -231,7 +235,7 @@ void PlotPad::dropEvent(QDropEvent* event) {
 			//if (newBlock->inArrow) {
 			//	scene->removeItem(newBlock->inArrow);
 			//	newBlock->inArrow->fromBlock->outArrow = Q_NULLPTR;
-			//	records->append(new RemoveArrowLine(newBlock->inArrow));
+			//	records->push_back(new RemoveArrowLine(newBlock->inArrow));
 			//	newBlock->inArrow = Q_NULLPTR;
 			//}
 		}
@@ -239,9 +243,8 @@ void PlotPad::dropEvent(QDropEvent* event) {
 			//当前界面不至一个节点 那么就不会设置这个节点为根节点 并让上一个节点连接到现在这个newBlock
 			Block* tempBlock = Q_NULLPTR;
 			//下面一段先找到当前界面根节点
-			if (1 == tempLevel) {
+			if (1 == tempLevel)
 				tempBlock = root;
-			}
 			else {
 				Block* parentBlock = blockOnPath->last();
 				tempBlock = parentBlock->childRoot;
@@ -252,14 +255,15 @@ void PlotPad::dropEvent(QDropEvent* event) {
 				tempBlock = tempBlock->outArrow->toBlock;
 			}
 			//生成一根线
-			ArrowLine* newArrow = connectBlocks(tempBlock, newBlock, records);
+			ArrowLine* newArrow = connectBlocks(tempBlock, newBlock, tempLevel, records);
 			//newArrow->level = tempLevel;  这句应该在构造函数里 2020.5.10Mashiro改
+
 		}
 	}
 	recordList->Do(records);
 	UndoRedoCtrl();
 	if (1 == blockStack.count())
-		edit->showContent(this);
+		edit->setPlainText(edit->showContent(this));
 	else {
 		edit->showContent(blockOnPath->last());
 	}
@@ -311,15 +315,10 @@ void PlotPad::mousePressEvent(QMouseEvent* e)
 		}
 		else {
 			if (1 == blockStack.count()) {
-				qDebug() << "id:" << this->root->id
-					<< "\ntype:" << this->root->type
-					<< "\ncontent:" << this->root->content
-					<< "\ngetContent:" << edit->getContent(this->root);
-				edit->showContent(this);
+				edit->setPlainText(edit->showContent(this));
 			}
 			else {
-				Block* parentBlock = blockOnPath->last();
-				edit->showContent(parentBlock);
+				edit->showContent(blockOnPath->last());
 			}
 		}
 		DeleteCtrl();
@@ -419,11 +418,10 @@ void PlotPad::backLevel() {
 			pathLabel->setElidedText();
 		}
 		if (1 == blockStack.count()) {
-			edit->showContent(this);
+			edit->setPlainText(edit->showContent(this));
 		}
 		else {
-			Block* parentBlock = blockOnPath->last();
-			edit->showContent(parentBlock);
+			edit->showContent(blockOnPath->last());
 		}
 	}
 }
@@ -438,10 +436,9 @@ void PlotPad::removeItem()
 		removeArrowLine((ArrowLine*)focusedItem);
 	}
 	if (1 == blockStack.count())
-		edit->showContent(this);
+		edit->setPlainText(edit->showContent(this));
 	else {
-		Block* parentBlock = blockOnPath->last();
-		edit->showContent(parentBlock);
+		edit->showContent(blockOnPath->last());
 	}
 }
 // 单纯地只remove当前Block，而不管他的ArrowLine，ArrowLine在Block之前移除
@@ -700,7 +697,7 @@ void PlotPad::mouseReleaseEvent(QMouseEvent* e)
 					newArrow->setFocus();
 					DeleteCtrl();
 					if (1 == blockStack.count())
-						edit->showContent(this);
+						edit->setPlainText(edit->showContent(this));
 					else 
 						edit->showContent(blockOnPath->last());
 				}
@@ -937,13 +934,14 @@ void Block::idMarker(Block* newChild) {
 	{
 	case 0://empty
 		this->content.append(insertID); break;
-	case 7://do_while
+	case 10://do_while
 		this->content.insert(length - 9, insertID); break;
 	case 1:case 2:case 3:case 4:
 		this->content.insert(length - 2, insertID); break;
 	default:
 		this->content.insert(length - 1, insertID); break;
 	}
+
 }
 //删除节点的子孙节点
 //void Block::deleteSelf() {

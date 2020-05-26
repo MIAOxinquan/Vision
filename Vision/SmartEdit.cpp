@@ -433,7 +433,7 @@ void SmartEdit::showContent(Block* block)
 }
 
 /*加载全局代码*/
-void SmartEdit::showContent(PlotPad* plot)
+QString SmartEdit::showContent(PlotPad* plot)
 {
 	QString cont = "";
 	if (plot->root) {
@@ -446,38 +446,42 @@ void SmartEdit::showContent(PlotPad* plot)
 			arr = block->outArrow;
 		}
 	}
-	this->setPlainText(cont);
+	//this->setPlainText(cont);
+	return cont;
 }
 
 /*全局显示时处理单个节点内容，返回正常代码*/
 QString SmartEdit::getContent(Block* block)
 {
+	if (!block)return "";
 	QString cont = block->content;
-	int index = cont.indexOf("#", 0);
-	int n = 0;
-	QRegExp rx("\\d");
-	Block* bl;
-	while (index != -1)
-	{
-		QString id = "";
-		int i = index + 1;
-		while (rx.exactMatch(cont.at(i))) {	//获取id
-			id += cont.at(i);
-			i++;
-		}
-		bl = block->childrenBlock->at(n);
-		if (id == bl->id)	//判断是否为子节点id
+	if (block->childrenBlock->count() > 0) {
+		int index = cont.indexOf("#", 0);
+		int n = 0;
+		QRegExp rx("\\d");
+		Block* bl;
+		while (index != -1)
 		{
-			cont.remove(index, i - 1);
-			cont.insert(index - 1, bl->content);
+			QString id = "";
+			int i = index + 1;
+			while (rx.exactMatch(cont.at(i))) {	//获取id
+				id += cont.at(i);
+				i++;
+			}
+			bl = block->childrenBlock->at(n);
+			if (id.toInt() == bl->id)	//判断是否为子节点id
+			{
+				cont.remove(index, id.length() + 1);
+				cont.insert(index - 1, bl->content);
+			}
+			n++;
+			index = cont.indexOf("#", index + bl->content.length());
 		}
-		n++;
-		index = cont.indexOf("#", index + 1);
-	}
-	for (int j = 0; j < block->childrenBlock->count(); j++) {//递归处理子孙节点
-		if (!block->childrenBlock->at(j)->childrenBlock->isEmpty()) {
-			QString subCont = this->getContent(block->childrenBlock->at(j));
-			cont.replace(block->childrenBlock->at(j)->content, subCont);
+		for (int j = 0; j < block->childrenBlock->count(); j++) {//递归处理子孙节点
+			if (!block->childrenBlock->at(j)->childrenBlock->isEmpty()) {
+				QString subCont = this->getContent(block->childrenBlock->at(j));
+				cont.replace(block->childrenBlock->at(j)->content, subCont);
+			}
 		}
 	}
 	return cont;

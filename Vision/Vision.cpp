@@ -9,16 +9,19 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version  4.02
-1.fix bug that the root of pad will be null if a children-containning block is removed;
-2.now id-insert is supported when a Block dropped into its parent but not for grandparent;
+version  4.08
+1.bug: a click on a new PlotPad will lead to crash within func getContent(Block*block) of SmartEdit;
+2.make type of func showContent(PlotPad*pad) from void to QString;
+3.add func fSave() in Vision.cpp to support func Save()&SaveAll();
+4.return func executeElementChilds(QDomElement e, PlotPad* pad, Block* parent) to original version as executeElementChilds(QDomElement e, PlotPad* pad, Block* parent, int _level);
+5.saving or openninng file as XML is supported;
 
 *.Block type will show children count if needed;
 *.escape character not supported;
 *.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "4.02";
+const QString version = "4.08";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -254,7 +257,7 @@ void Vision::New() {
 	curNodePathLabel->blockPath = newPad->getBlockPath();
 	curNodePathLabel->setElidedText();
 	if (curNodePathLabel->isHidden())curNodePathLabel->show();
-	//以下待补充
+	//用空字符串占位
 	filePaths.append("");
 }
 /*打开文件*/
@@ -272,7 +275,7 @@ void Vision::Open() {
 	QStringList names = filePath.split('/');
 	//文件名字
 	QString fileName = *(names.end() - 1);
-	if (filePath != "" ) {
+	if (filePath != "") {
 		if (filePaths.contains(filePath, Qt::CaseSensitive)) {//将焦点跳转到相同路径的tab
 			int index = filePaths.indexOf(filePath);
 			padTab->setCurrentIndex(index);
@@ -313,6 +316,8 @@ void Vision::Open() {
 			if (!doc.setContent(&file))
 			{
 				file.close();
+				filePaths.append(filePath);
+				statusBar()->showMessage(QString::fromLocal8Bit("打开文件") + filePath, 3000);
 				return;
 			}
 			file.close();
@@ -321,6 +326,7 @@ void Vision::Open() {
 			qDebug() << root.nodeName();
 			QDomNode node = root.firstChild(); //获得第一个子节点
 			Block* preBlock = Q_NULLPTR;
+			int nowLevel = 1;
 			while (!node.isNull())  //如果节点不空
 			{
 				if (node.isElement()) //如果节点是元素
@@ -333,7 +339,7 @@ void Vision::Open() {
 					}
 					//如果前面有个节点 且hasArrowLine就连接
 					if (preBlock) {
-						newPad->connectBlocks(preBlock, nowBlock, new QList<Record*>());
+						newPad->connectBlocks(preBlock, nowBlock, nowLevel, new QList<Record*>());
 						preBlock = Q_NULLPTR;
 					}
 
@@ -343,23 +349,22 @@ void Vision::Open() {
 
 					qDebug() << e.tagName() << " " << e.attribute("id"); //打印键值对，tagName和nodeName是一个东西
 					//下一句负责处理当前节点的所有子节点 并 递归后续
-					executeElementChilds(e, newPad, nowBlock, nowBlock->level + 1);
-					
+					executeElementChilds(e, newPad, nowBlock, nowLevel + 1);
+
 				}
 				node = node.nextSibling(); //下一个兄弟节点,nextSiblingElement()是下一个兄弟元素，都差不多
 			}
 			if (1 == newPad->blockStack.count())
-				newEdit->showContent(newPad);
+				newEdit->setPlainText(newEdit->showContent(newPad));
 			else {
 				newEdit->showContent(newPad->blockOnPath->last());
 			}
-			
+
 			//以下待补充
 
 
 			//将filePath添到已打开文件们中
 			filePaths.append(filePath);
-
 			statusBar()->showMessage(QString::fromLocal8Bit("打开文件") + filePath, 3000);
 		}
 	}
@@ -383,7 +388,7 @@ void Vision::executeElementChilds(QDomElement e, PlotPad* newPad, Block* parent,
 				}
 				//如果前面有个节点 且hasArrowLine就连接
 				if (preBlock) {
-					newPad->connectBlocks(preBlock, nowBlock,  new QList<Record*>())->hide(); //把这个连接的箭头隐藏掉
+					newPad->connectBlocks(preBlock, nowBlock, _level, new QList<Record*>())->hide(); //把这个连接的箭头隐藏掉
 					preBlock = Q_NULLPTR;
 				}
 				if (childElement.attribute("hasArrowLine") == "1") {
@@ -403,44 +408,54 @@ void Vision::Save() { //存入txt
 		//QRegExp rx("&untitled@\S*");	
 		int index = editTab->currentIndex();
 		QString filePath = filePaths.at(index);
-		if (filePath.isEmpty()) {
-			filePath = QFileDialog::getSaveFileName(this,
-				QString::fromLocal8Bit("保存文件"), DEFAULT_PATH, tr("XML (*.xml)"));
-			filePaths[index] = filePath;
-		}
-		QFile file(filePath);
-		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-			return;
-		QTextStream out(&file);
-		out.setCodec(QTextCodec::codecForName("utf-8"));
-		QString text = edits->at(index)->toPlainText();
-		out << text;
-		file.close();
-		statusBar()->showMessage(QString::fromLocal8Bit("成功保存至") + filePath, 3000);
+		if (fSave(filePath, index) == 1)
+			statusBar()->showMessage(QString::fromLocal8Bit("成功保存至") + filePath, 3000);
 	}
-	//存XML
 }
 /*保存全部*/
 void Vision::SaveAll() {
 	if (padTab->count() > 0) {
 		int fileCounts = filePaths.count();
+		int n = 0;	//用来判断是不是所有文件都保存成功了
 		for (int i = 0; i < fileCounts; i++) {
-			if (filePaths.at(i).isEmpty()) {
-				QString label = editTab->tabText(i);
-				QString filePath = QFileDialog::getSaveFileName(this,
-					QString::fromLocal8Bit("保存") + label, DEFAULT_PATH, tr("XML (*.xml)"));
-				filePaths[i] = filePath;
-			}
-			QFile file(filePaths.at(i));
-			if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-				return;
-			QTextStream out(&file);
-			out.setCodec(QTextCodec::codecForName("utf-8"));
-			out << edits->at(i)->toPlainText();
-			file.close();
+			QString filePath = filePaths.at(i);
+			n += fSave(filePath, i);
 		}
-		statusBar()->showMessage(QString::fromLocal8Bit("全部保存成功"), 3000);
+		if (n == fileCounts)
+			statusBar()->showMessage(QString::fromLocal8Bit("全部保存成功"), 3000);
 	}
+}
+/*保存文件具体操作*/
+int Vision::fSave(QString filePath, int index) {
+	if (filePath.isEmpty()) {
+		QString defName = padTab->tabText(index);
+		filePath = QFileDialog::getSaveFileName(this,
+			QString::fromLocal8Bit("保存") + defName, DEFAULT_PATH + tr("/") + defName, "Xml(*.xml);;Txt(*.txt)");
+		if (filePath.isEmpty())
+			return -1;
+		filePaths[index] = filePath;
+	}
+	QFileInfo fileInfo = QFileInfo(filePath);
+	QString fsuffix = fileInfo.suffix();
+	if (fsuffix == "txt") {	//存txt
+		QFile file(filePath);
+		if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+			return -1;
+		QTextStream out(&file);
+		out.setCodec(QTextCodec::codecForName("utf-8"));
+		PlotPad* pad = pads->at(index);
+		QString text = pad->edit->showContent(pad);
+		out << text;
+		file.close();
+	}
+	else if (fsuffix == "xml") {	//存xml
+		pads->at(index)->outport(filePath);
+	}
+	//将路径保存至已有文件路径中
+	filePaths.replace(index, filePath);
+	padTab->setTabText(index, fileInfo.fileName());
+	editTab->setTabText(index, fileInfo.fileName());
+	return 1;
 }
 /*导出，另存为*/
 void Vision::SaveAs() {

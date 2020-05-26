@@ -125,7 +125,7 @@ public:
     //添加一个节点到另一个节点里
     void addBlockIntoBlock(Block* oldBlock, Block* newBlock, QList<Record*>* records);
     //连接两个节点并将连线添加到scene中 并 返回连接线
-    ArrowLine* connectBlocks(Block* src, Block* des, QList<Record*>* records);
+    ArrowLine* connectBlocks(Block* src, Block* des, int _level, QList<Record*>* records);
 
     /*
     ActionCTRL
