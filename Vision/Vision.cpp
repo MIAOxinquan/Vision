@@ -9,19 +9,21 @@ for example, versions 1.0, 1.01, 1.02 are regarded as neighbour group, if curren
 ,so as neighbour version can be 1.0 or 1.01 or 1.02
 
 neighbour@
-version  4.08
-1.bug: a click on a new PlotPad will lead to crash within func getContent(Block*block) of SmartEdit;
-2.make type of func showContent(PlotPad*pad) from void to QString;
-3.add func fSave() in Vision.cpp to support func Save()&SaveAll();
-4.return func executeElementChilds(QDomElement e, PlotPad* pad, Block* parent) to original version as executeElementChilds(QDomElement e, PlotPad* pad, Block* parent, int _level);
-5.saving or openninng file as XML is supported;
+version  4.16
+1.func Close(), Open() and Save() are basically supported, and qss for func Close() is available;
+2.now content of focusedBlock will refresh properly;
+3.block id now can be inserted in content properly;
+4.bug that id-repeat-inserting when open xml files fixed;
+5.add attribute "indexTotal" into xml's root "pad";
+6.remove Action Copy, Paste and Cut;
+7.bug that a xml just opened loss its operatility fixed;
+8.now support two patterns, you can choose to show plotpad or not;
 
 *.Block type will show children count if needed;
 *.escape character not supported;
-*.support two patterns, you can choose to show plotpad or not;
 *.support two languages, you can choose C++ or Java;
 */
-const QString version = "4.08";
+const QString version = "4.16";
 
 /*Vision*/
 Vision::Vision(QWidget* parent)
@@ -66,9 +68,9 @@ Vision::Vision(QWidget* parent)
 	connect(timer, SIGNAL(timeout()), this, SLOT(showCurDateTime()));
 	connect(visionUi.actionUndo, SIGNAL(triggered()), this, SLOT(Undo()));
 	connect(visionUi.actionRedo, SIGNAL(triggered()), this, SLOT(Redo()));
-	connect(visionUi.actionCut, SIGNAL(triggered()), this, SLOT(Cut()));
+	/*connect(visionUi.actionCut, SIGNAL(triggered()), this, SLOT(Cut()));
 	connect(visionUi.actionCopy, SIGNAL(triggered()), this, SLOT(Copy()));
-	connect(visionUi.actionPaste, SIGNAL(triggered()), this, SLOT(Paste()));
+	connect(visionUi.actionPaste, SIGNAL(triggered()), this, SLOT(Paste()));*/
 	connect(visionUi.actionBackLevel, SIGNAL(triggered()), this, SLOT(BackLevel()));
 	connect(visionUi.actionDelete, SIGNAL(triggered()), this, SLOT(Delete()));
 	connect(visionUi.actionGetCode, SIGNAL(triggered()), this, SLOT(getCode()));
@@ -145,13 +147,17 @@ bool Vision::tabNotEmpty() {
 /*默认模式*/
 void Vision::Default() {
 	if (tabNotEmpty()) {
-
+		globalSplitter->widget(1)->hide();
+		visionUi.actionDefault->setEnabled(false);
+		visionUi.actionNoPlot->setEnabled(true);
 	}
 }
 /*无图模式*/
 void Vision::NoPlot() {
 	if (tabNotEmpty()) {
-
+		globalSplitter->widget(1)->show();
+		visionUi.actionNoPlot->setEnabled(false);
+		visionUi.actionDefault->setEnabled(true);
 	}
 }
 /*C++*/
@@ -180,31 +186,23 @@ void Vision::About() {
 void Vision::Undo() {
 	if (tabNotEmpty()) {
 		int index = editTab->currentIndex();
-		pads->at(index)->undo();
-		pads->at(index)->update();
-		edits->at(index)->showContent(pads->at(index));
+		PlotPad* curPad = pads->at(index);
+		SmartEdit* curEdit = edits->at(index);
+		curPad->undo();
+		curPad->update();
+		curEdit->setPlainText(curEdit->showContent(curPad));
 	}
 }
 /*重做*/
 void Vision::Redo() {
 	if (tabNotEmpty()) {
 		int index = editTab->currentIndex();
-		pads->at(index)->redo();
-		pads->at(index)->update();
-		edits->at(index)->showContent(pads->at(index));
+		PlotPad* curPad = pads->at(index);
+		SmartEdit* curEdit = edits->at(index);
+		curPad->redo();
+		curPad->update();
+		curEdit->setPlainText(curEdit->showContent(curPad));
 	}
-}
-/*剪切*/
-void Vision::Cut() {
-
-}
-/*复制*/
-void Vision::Copy() {
-	
-}
-/*粘贴*/
-void Vision::Paste() {
-
 }
 /*全选*/
 void Vision::BackLevel() {
@@ -247,6 +245,7 @@ void Vision::New() {
 	edits->append(newEdit);
 	editTab->addTab(newEdit, defaultName);
 	editTab->setCurrentIndex(index);
+	newEdit->pad = newPad;
 	newPad->edit = newEdit;
 	newPad->pathLabel = curNodePathLabel;
 	newPad->actionUndo = visionUi.actionUndo;
@@ -295,6 +294,7 @@ void Vision::Open() {
 			edits->append(newEdit);
 			editTab->addTab(newEdit, defaultName);
 			editTab->setCurrentIndex(index);
+			newEdit->pad = newPad;
 			newPad->edit = newEdit;
 			newPad->pathLabel = curNodePathLabel;
 			newPad->actionUndo = visionUi.actionUndo;
@@ -333,7 +333,10 @@ void Vision::Open() {
 				{
 					QDomElement e = node.toElement(); //转换为元素，注意元素和节点是两个数据结构，其实差不多
 					Block* nowBlock = new Block(e);
+					newPad->isNew = false;
 					newPad->addBlock(nowBlock);
+					newPad->isNew - true;
+					newPad->indexTotal = root.attribute("indexTotal").toInt();
 					if (e.attribute("blockText").contains("*")) {
 						newPad->setRoot(nowBlock);
 					}
@@ -349,13 +352,15 @@ void Vision::Open() {
 
 					qDebug() << e.tagName() << " " << e.attribute("id"); //打印键值对，tagName和nodeName是一个东西
 					//下一句负责处理当前节点的所有子节点 并 递归后续
+					newPad->isNew = false;
 					executeElementChilds(e, newPad, nowBlock, nowLevel + 1);
-
+					newPad->isNew = true;
 				}
 				node = node.nextSibling(); //下一个兄弟节点,nextSiblingElement()是下一个兄弟元素，都差不多
 			}
-			if (1 == newPad->blockStack.count())
+			if (1 == newPad->blockStack.count()) {
 				newEdit->setPlainText(newEdit->showContent(newPad));
+			}
 			else {
 				newEdit->showContent(newPad->blockOnPath->last());
 			}
@@ -381,8 +386,10 @@ void Vision::executeElementChilds(QDomElement e, PlotPad* newPad, Block* parent,
 			qDebug() << n.nodeName() << ":" << n.toElement().text();
 			QDomElement childElement = n.toElement();
 			if (childElement.tagName() == "Block") {
+				//newPad->isNew = false;
 				Block* nowBlock = new Block(childElement);
 				newPad->addBlockIntoBlock(parent, nowBlock, Q_NULLPTR);
+				//newPad->isNew = true;
 				if (childElement.attribute("blockText").contains("*")) {
 					parent->setChildRoot(nowBlock);
 				}
@@ -394,13 +401,12 @@ void Vision::executeElementChilds(QDomElement e, PlotPad* newPad, Block* parent,
 				if (childElement.attribute("hasArrowLine") == "1") {
 					preBlock = nowBlock;
 				}
-
 				//处理当前节点的子节点们
 				executeElementChilds(childElement, newPad, nowBlock, _level + 1);
 			}
 		}
-
 	}
+	newPad->isNew = true;
 }
 /*保存文件*/
 void Vision::Save() { //存入txt
@@ -461,39 +467,60 @@ int Vision::fSave(QString filePath, int index) {
 void Vision::SaveAs() {
 	if (tabNotEmpty()) {
 		int index = editTab->currentIndex();
-		pads->at(index)->outport("test.xml");
+		QString defName = padTab->tabText(index)
+			, pattern = (globalSplitter->widget(1)->isHidden()) ? "Txt(*.txt)" : "Xml(*.xml);;Txt(*.txt)";
+		QString filePath = QFileDialog::getSaveFileName(this,
+			QString::fromLocal8Bit("保存") + defName, DEFAULT_PATH + tr("/") + defName, pattern);
+		if (filePath.isEmpty())
+			return ;
+		filePaths[index] = filePath;
+		
+		QFileInfo fileInfo = QFileInfo(filePath);
+		QString fsuffix = fileInfo.suffix();
+		if (fsuffix == "txt") {	//存txt
+			QFile file(filePath);
+			if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+				return ;
+			QTextStream out(&file);
+			out.setCodec(QTextCodec::codecForName("utf-8"));
+			PlotPad* pad = pads->at(index);
+			QString text = pad->edit->showContent(pad);
+			out << text;
+			file.close();
+		}
+		else if (fsuffix == "xml") {	//存xml
+			pads->at(index)->outport(filePath);
+		}
+		//将路径保存至已有文件路径中
+		filePaths.replace(index, filePath);
+		padTab->setTabText(index, fileInfo.fileName());
+		editTab->setTabText(index, fileInfo.fileName());
+		statusBar()->showMessage(QString::fromLocal8Bit("成功保存至") + filePath, 3000);
 	}
 }
 /*关闭文件*/
 void Vision::Close() {
 	if (tabNotEmpty()) {
 		int index = editTab->currentIndex();
-		QString filePath = filePaths.at(index);
-		QFile file(filePath);
-		if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-		QTextStream in(&file);
-		in.setCodec(QTextCodec::codecForName("utf-8"));
-		QString all = in.readAll();
-		file.close();
-		QString text = edits->at(index)->toPlainText();
-		if (QString::compare(all, text) != 0) {
-			QMessageBox* msgBox = new QMessageBox(
-				QMessageBox::Question
-				, QString::fromLocal8Bit("关闭")
-				, QString::fromLocal8Bit("是否保存当前文件？")
-				, QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-			msgBox->button(QMessageBox::Yes)->setText(QString::fromLocal8Bit("保存退出"));
-			msgBox->button(QMessageBox::No)->setText(QString::fromLocal8Bit("直接退出"));
-			msgBox->button(QMessageBox::Cancel)->setText(QString::fromLocal8Bit("取消"));
-			int choose = msgBox->exec();
-			if (QMessageBox::Yes == choose)
-				Save();
-			if (QMessageBox::Cancel == choose)
-				return;
-		}
+		QMessageBox* msgBox = new QMessageBox(
+			QMessageBox::Question
+			, QString::fromLocal8Bit("关闭")
+			, QString::fromLocal8Bit("是否保存当前文件？")
+			, QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+		msgBox->button(QMessageBox::Yes)->setText(QString::fromLocal8Bit("保存并关闭"));
+		msgBox->button(QMessageBox::No)->setText(QString::fromLocal8Bit("直接关闭"));
+		msgBox->button(QMessageBox::Cancel)->setText(QString::fromLocal8Bit("取消"));
+		loadStyleSheet(msgBox, "msgBox.qss");
+		int choose = msgBox->exec();
+		if (QMessageBox::Cancel == choose)
+			return;
+		if (QMessageBox::Yes == choose)
+			Save();
 		filePaths.removeAt(index);
 		pads->removeAt(index);
 		edits->removeAt(index);
+		padTab->removeTab(index);
+		editTab->removeTab(index);
 		if (!tabNotEmpty()) {
 			visionUi.actionSave->setEnabled(false);
 			visionUi.actionSaveAll->setEnabled(false);

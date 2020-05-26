@@ -44,9 +44,6 @@ private slots:
 	//大写是为避免和qt自带函数重名
 	void Undo();
 	void Redo();
-	void Cut();
-	void Copy();
-	void Paste();
 	void BackLevel();
 	void Delete();
 	void New();

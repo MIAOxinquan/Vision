@@ -95,12 +95,6 @@
     <addaction name="separator"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
-    <addaction name="actionCopy"/>
-    <addaction name="separator"/>
-    <addaction name="actionPaste"/>
-    <addaction name="separator"/>
-    <addaction name="actionCut"/>
-    <addaction name="separator"/>
     <addaction name="actionDelete"/>
     <addaction name="separator"/>
     <addaction name="actionBackLevel"/>
@@ -556,6 +550,9 @@
    </property>
   </action>
   <action name="actionDefault">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="Default">
      <normaloff>Resources/icon/Default.png</normaloff>Resources/icon/Default.png</iconset>

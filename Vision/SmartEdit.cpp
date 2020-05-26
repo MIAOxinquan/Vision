@@ -1,6 +1,7 @@
 #include "global.h"
 #include "SmartEdit.h"
 #include "PlotPad.h"
+class Item;
 //#include<algorithm>
 /*高亮器*/
 SyntaxLit::SyntaxLit(QTextDocument* document)
@@ -168,6 +169,7 @@ SmartEdit::SmartEdit(QTabWidget* parent)
 	, syntaxLit(new SyntaxLit(this->document()))
 	, rowNumArea(new RowNumArea(this))
 	, keysCompleter(Q_NULLPTR)
+	, pad(Q_NULLPTR)
 {
 	this->setAcceptDrops(false);
 	setContextMenuPolicy(Qt::NoContextMenu);
@@ -308,7 +310,6 @@ void SmartEdit::rowContentPlot(/*int*/) {
 	setViewportMargins(getRowNumWidth() - 3, -1, -3, 0);
 	curTextCursor = textCursor();
 	/*  节点内容识别函数  */
-
 	//当前行高亮
 	if (!isReadOnly()) {
 		QList<QTextEdit::ExtraSelection> extraSelections;
@@ -320,18 +321,24 @@ void SmartEdit::rowContentPlot(/*int*/) {
 		extraSelections.append(selection);
 		setExtraSelections(extraSelections);
 	}
+	if (pad && pad->focusedBlock) {
+		qDebug() << "focused";
+		pad->focusedBlock->content = getParentNodeContent();
+	}
 }
 /*  节点内容识别函数  */
 /*返回父节点的内容，其中子节点内容只保留id*/
 QString SmartEdit::getParentNodeContent()
 {
+	//stringList
 	QString str = this->toPlainText();
 	QStringList childContents = getChildNodeContent();
 	int num = childContents.count();
 	for (int i = 0; i < num; i++) {
-		str.replace("<@" + childContents[i] + "@>", " ");
+		//stringList.append(childContents[i]);
+		str.replace("<@" + childContents[i] + "@>", "");
 	}
-	this->setPlainText(str);	//for test
+	//stringList.append(str);
 	return str;
 }
 
@@ -409,7 +416,7 @@ void SmartEdit::showContent(Block* block)
 	//QStringList idInContent;
 	while (index != -1)	//每次循环先获取#后面的数字，若其与对应子节点的id相等则将子节点content插入id之后
 	{
-		int i = index;
+		int i = index + 1;
 		QString id = "";
 		while (rx.exactMatch(cont.at(i))) {	//获取id
 			id += cont.at(i);
@@ -417,13 +424,13 @@ void SmartEdit::showContent(Block* block)
 		}
 		//idInContent.append(id);
 		bl = block->childrenBlock->at(n);
-		if (id == bl->id)	//判断是否为子节点id
+		if (id.toInt() == bl->id)	//判断是否为子节点id
 		{
-			if (bl->childrenBlock->count() != 0) {
-				QString str = bl->content;
-				str.replace("#", "$");
-				cont.insert(i, "<@\n" + str + "\n@>\n");
+			QString str = bl->content;
+			if (bl->childrenBlock->count() != 0) {				
+				str.replace("#", "$");				
 			}
+			cont.insert(i, "<@\n" + str + "\n@>");
 		}
 		n++;
 		index = cont.indexOf("#", index + 1);
@@ -471,7 +478,7 @@ QString SmartEdit::getContent(Block* block)
 			bl = block->childrenBlock->at(n);
 			if (id.toInt() == bl->id)	//判断是否为子节点id
 			{
-				cont.remove(index, id.length() + 1);
+				cont.remove(index, id.length() + 2);
 				cont.insert(index - 1, bl->content);
 			}
 			n++;

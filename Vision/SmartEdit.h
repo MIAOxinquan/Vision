@@ -30,6 +30,7 @@ public:
 	void showContent(Block* block);
 	QString showContent(PlotPad* plot);
 	QString getContent(Block* block);
+	PlotPad* pad;
 
 protected:
 	void resizeEvent(QResizeEvent* event)override;

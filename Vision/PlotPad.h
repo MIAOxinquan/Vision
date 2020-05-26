@@ -91,6 +91,7 @@ class PlotPad :public QGraphicsView
 public:
     PlotPad(QGraphicsScene* scene);
 
+    bool isNew;
     int indexTotal;
     QString title;
     QGraphicsScene* scene;
@@ -98,7 +99,7 @@ public:
     SmartEdit* edit;
     TipLabel* pathLabel;
 
-    Block* root;
+    Block* root, * focusedBlock;
     QStack<QList<Block*>*> blockStack; //blockStack 顶部的QList里面存的应当是当前层显示出来的Items的列表
     RecordList* recordList;
     QList<Block*>*blockOnPath;
